@@ -732,25 +732,45 @@ full circle of equally valid splits, related by rotation. Nothing privileges one
 the algebra is covariant under the choice, which is exactly why the framework can be
 written about any imaginary direction and in any dimension.
 
-### 11.5 The four gates: two halves and two poles
+### 11.5 The gate lattice: the whole and the parts
 
-Reading the same four minterms through the symmetric two-input gates makes the
-"half/half" structure explicit (every claim exact, `src/logic.py`):
+The four named gates — XNOR, NAND, XOR, AND — are not four separate facts but one
+structure seen at two levels: **wholes (supersets)** and **parts (subsets)**. Reading
+each symmetric gate as the *set of landmarks where it is true* orders them by inclusion
+into a lattice (every relation below is exact, `src/logic.py`, 0 violations).
 
-* **XNOR** (agreement) is true on the **real axis** $\{1,-1\}$ — half the landmarks;
-  **XOR** (disagreement) on the **imaginary axis** $\{i,-i\}$ — the other half. These
-  are the two halves of Section 11.1.
-* Within the agreement half the two **poles** are **AND** (true only at $+1$, "both
-  true") and **NOR** (true only at $-1$, "both false"); their output-complements are
-  **NAND** and **OR**, true on three landmarks each.
-* AND, NAND, OR, NOR are each realisable by a **single half-plane** (one axis and a
-  threshold); **XOR and XNOR are not** — they require an axis *together with its
-  orthogonal/complement* (the classic non-separability of parity). The
-  agreement/disagreement reading is intrinsically two-axis; the poles are one-axis.
-* Rotating the axis pair (Section 11.4) permutes these roles: at $90^\circ$ the XNOR
-  and XOR halves swap and the AND/NOR poles move onto the imaginary axis. *Which* gate
-  sits *where* is a free choice of orthogonal/complement frame; the gate *content* —
-  two halves plus two poles — is invariant.
+**The halves (the level-2 partition).** $\mathrm{XNOR}=\{1,-1\}$ (agreement, the real
+axis) and $\mathrm{XOR}=\{i,-i\}$ (disagreement, the imaginary axis) are complementary
+halves: their union is the whole and their intersection is empty. These are the two
+halves of Section 11.1.
+
+**The parts (subsets / poles).** Below XNOR sit its two **poles**: $\mathrm{AND}=\{1\}$
+(both true) and $\mathrm{NOR}=\{-1\}$ (both false). Above XOR sit the two size-three
+**wholes** $\mathrm{OR}=\{1,i,-i\}$ and $\mathrm{NAND}=\{-1,i,-i\}$. So the user's
+ordering is exactly two superset $\supset$ subset pairs:
+
+$$ \mathrm{XNOR}\supset\mathrm{AND}, \qquad \mathrm{NAND}\supset\mathrm{XOR}, $$
+
+each "half" a whole standing over its part. Output-complement is the lattice's
+top–bottom mirror: $\mathrm{AND}^{c}=\mathrm{NAND}$, $\mathrm{NOR}^{c}=\mathrm{OR}$,
+$\mathrm{XOR}^{c}=\mathrm{XNOR}$ (point reflection through the centre).
+
+![the gate lattice](../figures/fig19_lattice.png)
+
+*Figure 19. The gates as a whole/part lattice, ordered by the size of their true-set:
+$\bot=\varnothing$ at the bottom, $\top$ at the top, the two complementary halves
+(XNOR, XOR) across the middle, the poles (AND, NOR) as parts beneath. Orange marks the
+superset $\supset$ subset pairs XNOR$\supset$AND and NAND$\supset$XOR; complement is
+the point reflection through the centre.*
+
+**The dynamics.** One axis cuts the circle into a half-plane — and indeed
+AND, NAND, OR, NOR are each realisable by a *single* half-plane, while **XOR and XNOR
+are not**: parity needs an axis *together with its orthogonal/complement* (verified by
+the separability test). So the *part*-gates are one-axis and the *half*-gates are
+two-axis. Rotating the axis pair (Section 11.4) moves everything coherently: at
+$90^\circ$ the XNOR and XOR halves swap and the AND/NOR poles slide onto the imaginary
+axis. *Which* gate sits *where* is a free choice of orthogonal/complement frame; the
+lattice itself — whole over part, half against half — is invariant.
 
 ![the gate decomposition](../figures/fig18_gates.png)
 
@@ -758,9 +778,10 @@ Reading the same four minterms through the symmetric two-input gates makes the
 half; the poles are AND $(+1)$ and NOR $(-1)$. Right: AND is one half-plane, XOR needs
 an axis and its orthogonal — the parity gates are the genuinely two-axis ones.*
 
-So, per orthogonal axis pair, the structure is *half agreement (XNOR, with AND/NOR
-poles) and half disagreement (XOR)*, and conjugation, negation, and rotation simply
-move between equivalent framings of the same four states.
+So, per orthogonal axis pair, the structure is a single lattice read two ways: *half
+agreement (XNOR, with the AND/NOR poles as its parts) and half disagreement (XOR, part
+of the NAND/OR wholes)* — and conjugation, negation, and rotation simply move between
+equivalent framings of the same four states.
 
 ## 12. Synthesis
 
@@ -819,7 +840,7 @@ python src/spinor.py           # Section 7  -> fig9
 python src/dirac.py            # Section 8  -> fig10
 python src/qnn.py              # Section 9  -> fig11..fig14; results/learning.json
 python src/ledger.py           # Section 10 -> fig15
-python src/logic.py            # Section 11 -> fig16, fig17, fig18
+python src/logic.py            # Section 11 -> fig16..fig19
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,

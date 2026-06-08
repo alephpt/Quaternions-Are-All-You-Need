@@ -322,6 +322,111 @@ def make_gate_figure(res_g: dict):
     print(f"  wrote {os.path.relpath(path)}")
 
 
+# --- the gate lattice: whole (superset) and parts (subset) --------------------
+LM_NAME = {1 + 0j: "1", -1 + 0j: "-1", 0 + 1j: "i", 0 - 1j: "-i"}
+ALL_LM = frozenset(LM_NAME.values())
+
+
+def gate_trueset(name) -> frozenset:
+    """The set of unit-circle landmarks where a symmetric gate is true."""
+    g = GATES[name]
+    return frozenset(LM_NAME[MINTERM_TO_C[m]] for m in MINTERM_TO_C if g(*m))
+
+
+def verify_lattice() -> dict:
+    S = {name: gate_trueset(name) for name in GATES}
+    S["FALSE"] = frozenset()
+    S["TRUE"] = ALL_LM
+    comp = lambda s: ALL_LM - s
+
+    checks = {
+        # the two halves partition the whole
+        "XNOR | XOR == whole": S["XNOR"] | S["XOR"] == ALL_LM,
+        "XNOR & XOR == empty": S["XNOR"] & S["XOR"] == frozenset(),
+        # superset > subset pairs (the user's ordering)
+        "XNOR superset of AND": S["AND"] < S["XNOR"],
+        "NAND superset of XOR": S["XOR"] < S["NAND"],
+        # poles are parts of the agreement half
+        "AND, NOR subset of XNOR": S["AND"] < S["XNOR"] and S["NOR"] < S["XNOR"],
+        # disagreement half is part of both size-3 supersets
+        "XOR subset of OR and NAND": S["XOR"] < S["OR"] and S["XOR"] < S["NAND"],
+        # complement (output-negation) pairs
+        "AND^c == NAND": comp(S["AND"]) == S["NAND"],
+        "NOR^c == OR": comp(S["NOR"]) == S["OR"],
+        "XOR^c == XNOR": comp(S["XOR"]) == S["XNOR"],
+    }
+    violations = sum(1 for v in checks.values() if not v)
+    return {"checks": checks, "violations": violations, "sets": S}
+
+
+def make_lattice_figure(res_l: dict):
+    S = res_l["sets"]
+    # position by size (y) and a left/right spread chosen so complements are
+    # point-symmetric through the centre (0, 2)
+    pos = {
+        "FALSE": (0.0, 0.0),
+        "AND": (-0.8, 1.0), "NOR": (0.8, 1.0),
+        "XNOR": (-1.0, 2.0), "XOR": (1.0, 2.0),
+        "OR": (-0.8, 3.0), "NAND": (0.8, 3.0),
+        "TRUE": (0.0, 4.0),
+    }
+    edges = [("FALSE", "AND"), ("FALSE", "NOR"), ("FALSE", "XOR"),
+             ("AND", "XNOR"), ("AND", "OR"), ("NOR", "XNOR"), ("NOR", "NAND"),
+             ("XOR", "OR"), ("XOR", "NAND"),
+             ("XNOR", "TRUE"), ("OR", "TRUE"), ("NAND", "TRUE")]
+    bold = {("AND", "XNOR"), ("XOR", "NAND")}     # the user's superset>subset pairs
+
+    fig, ax = plt.subplots(figsize=(7.6, 7.2))
+    for u, v in edges:
+        (x0, y0), (x1, y1) = pos[u], pos[v]
+        if (u, v) in bold:
+            ax.plot([x0, x1], [y0, y1], color="#ff7f0e", lw=3, zorder=1)
+        else:
+            ax.plot([x0, x1], [y0, y1], color="0.7", lw=1.2, zorder=1)
+
+    setstr = lambda name: "{" + ",".join(sorted(S[name],
+                              key=lambda s: {"1": 0, "i": 1, "-1": 2, "-i": 3}[s])) + "}" \
+                              if S[name] else "∅"
+    colors = {"XNOR": "#2ca02c", "XOR": "#d62728", "AND": "#1f77b4", "NOR": "#1f77b4",
+              "OR": "#9467bd", "NAND": "#9467bd", "TRUE": "0.3", "FALSE": "0.3"}
+    short = {"TRUE": "⊤", "FALSE": "⊥"}
+    for name, (x, y) in pos.items():
+        ax.scatter([x], [y], s=900, color=colors.get(name, "0.5"),
+                   edgecolor="black", zorder=3, alpha=0.92)
+        ax.annotate(short.get(name, name), (x, y), ha="center", va="center",
+                    fontsize=9.5, color="white", fontweight="bold", zorder=4)
+        # the true-set as an offset label, pushed outward from the centre column
+        if x < 0:
+            ox, ha = -22, "right"
+        elif x > 0:
+            ox, ha = 22, "left"
+        else:
+            ox, ha = 0, "center"
+        oy = 0 if x != 0 else (20 if y > 2 else -20)
+        ax.annotate(setstr(name), (x, y), textcoords="offset points",
+                    xytext=(ox, oy), ha=ha, va="center", fontsize=8.5,
+                    color=colors.get(name, "0.4"), zorder=4)
+
+    # annotate the two halves and the dynamics
+    ax.annotate("", xy=(0.78, 2.0), xytext=(-0.78, 2.0),
+                arrowprops=dict(arrowstyle="<->", color="0.4", lw=1, ls=":"))
+    ax.text(0.0, 2.16, "two complementary halves\n(union = whole, ∩ = ∅)",
+            ha="center", fontsize=8, color="0.4")
+    ax.text(-1.55, 1.0, "parts\n(subsets:\npoles)", ha="center", fontsize=9, color="#1f77b4")
+    ax.text(1.62, 3.0, "wholes\n(supersets)", ha="center", fontsize=9, color="#9467bd")
+    ax.text(0.0, -0.42, "orange = the superset⊃subset pairs  XNOR⊃AND,  NAND⊃XOR\n"
+            "(complement = point reflection through the centre; rotation 90° swaps the halves)",
+            ha="center", fontsize=8.5, color="0.3")
+
+    ax.set_xlim(-2.1, 2.1); ax.set_ylim(-0.8, 4.5); ax.axis("off")
+    ax.set_title("The gate lattice: the whole and the parts\n"
+                 "(subset $\\subset$ superset, ordered by size of true-set)", fontsize=12)
+    path = os.path.join(FIG_DIR, "fig19_lattice.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
+
+
 def make_figure(res_h: dict):
     fig = plt.figure(figsize=(13.5, 4.6))
     gs = fig.add_gridspec(1, 3, width_ratios=[1.15, 1, 1])
@@ -413,9 +518,14 @@ def main():
         if isinstance(v, float):
             print(f"    {k:<38} {v:.2e}")
     print(f"    separable (one half-plane): {res_g['separable (one half-plane)']}")
+    res_l = verify_lattice()
+    print(f"  gate lattice (whole/part): {res_l['violations']} violations")
+    for k, v in res_l["checks"].items():
+        print(f"    {k:<28} {v}")
     make_figure(res_h)
     make_rotation_figure()
     make_gate_figure(res_g)
+    make_lattice_figure(res_l)
 
 
 if __name__ == "__main__":

@@ -228,6 +228,17 @@ per orthogonal axis pair: half agreement (XNOR + AND/NOR poles), half disagreeme
 
 ![gates](figures/fig18_gates.png)
 
+**Whole/part lattice (0 violations).** The four named gates are one structure at two
+levels: wholes (supersets) over parts (subsets). XNOR=`{1,−1}` and XOR=`{i,−i}` are the
+two complementary halves (union = whole, ∩ = ∅); the poles AND=`{1}`, NOR=`{−1}` are
+parts of XNOR; OR=`{1,i,−i}`, NAND=`{−1,i,−i}` are wholes over XOR. The user's pairing
+is exactly **XNOR⊃AND** and **NAND⊃XOR**; output-complement is the lattice's central
+point-reflection (AND↔NAND, NOR↔OR, XOR↔XNOR). One axis = a half-plane (AND/NAND/OR/NOR);
+parity (XOR/XNOR) needs an axis + its orthogonal. Rotation 90° swaps the halves; the
+lattice is invariant.
+
+![lattice](figures/fig19_lattice.png)
+
 ---
 
 ## Honest summary
