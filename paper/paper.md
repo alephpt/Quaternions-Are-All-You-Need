@@ -732,6 +732,36 @@ full circle of equally valid splits, related by rotation. Nothing privileges one
 the algebra is covariant under the choice, which is exactly why the framework can be
 written about any imaginary direction and in any dimension.
 
+### 11.5 The four gates: two halves and two poles
+
+Reading the same four minterms through the symmetric two-input gates makes the
+"half/half" structure explicit (every claim exact, `src/logic.py`):
+
+* **XNOR** (agreement) is true on the **real axis** $\{1,-1\}$ — half the landmarks;
+  **XOR** (disagreement) on the **imaginary axis** $\{i,-i\}$ — the other half. These
+  are the two halves of Section 11.1.
+* Within the agreement half the two **poles** are **AND** (true only at $+1$, "both
+  true") and **NOR** (true only at $-1$, "both false"); their output-complements are
+  **NAND** and **OR**, true on three landmarks each.
+* AND, NAND, OR, NOR are each realisable by a **single half-plane** (one axis and a
+  threshold); **XOR and XNOR are not** — they require an axis *together with its
+  orthogonal/complement* (the classic non-separability of parity). The
+  agreement/disagreement reading is intrinsically two-axis; the poles are one-axis.
+* Rotating the axis pair (Section 11.4) permutes these roles: at $90^\circ$ the XNOR
+  and XOR halves swap and the AND/NOR poles move onto the imaginary axis. *Which* gate
+  sits *where* is a free choice of orthogonal/complement frame; the gate *content* —
+  two halves plus two poles — is invariant.
+
+![the gate decomposition](../figures/fig18_gates.png)
+
+*Figure 18. Left: XNOR is the agreement (real) half, XOR the disagreement (imaginary)
+half; the poles are AND $(+1)$ and NOR $(-1)$. Right: AND is one half-plane, XOR needs
+an axis and its orthogonal — the parity gates are the genuinely two-axis ones.*
+
+So, per orthogonal axis pair, the structure is *half agreement (XNOR, with AND/NOR
+poles) and half disagreement (XOR)*, and conjugation, negation, and rotation simply
+move between equivalent framings of the same four states.
+
 ## 12. Synthesis
 
 Two claims, at two confidence levels. The **algebraic** claim is settled: among
@@ -789,7 +819,7 @@ python src/spinor.py           # Section 7  -> fig9
 python src/dirac.py            # Section 8  -> fig10
 python src/qnn.py              # Section 9  -> fig11..fig14; results/learning.json
 python src/ledger.py           # Section 10 -> fig15
-python src/logic.py            # Section 11 -> fig16, fig17
+python src/logic.py            # Section 11 -> fig16, fig17, fig18
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,

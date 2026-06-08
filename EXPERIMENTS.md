@@ -217,6 +217,17 @@ continuous completion of the discrete Boolean swap.
 
 ![rotation](figures/fig17_rotation.png)
 
+**Gate decomposition (the "half/half").** Through the symmetric two-input gates (all
+exact): **XNOR** = agreement = real axis `{1,−1}` (half); **XOR** = disagreement =
+imaginary axis `{i,−i}` (half); the agreement poles are **AND** (`+1`, both true) and
+**NOR** (`−1`, both false), with output-complements NAND/OR. AND/NAND/OR/NOR are each
+a single half-plane (one axis); **XOR/XNOR are not** — they need an axis *and* its
+orthogonal/complement. Rotating 90° swaps the XNOR/XOR halves and moves the poles. So
+per orthogonal axis pair: half agreement (XNOR + AND/NOR poles), half disagreement
+(XOR).
+
+![gates](figures/fig18_gates.png)
+
 ---
 
 ## Honest summary

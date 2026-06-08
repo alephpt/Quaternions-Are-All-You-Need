@@ -217,6 +217,111 @@ def make_rotation_figure():
     print(f"  wrote {os.path.relpath(path)}")
 
 
+# --- the four symmetric gates over the minterms -------------------------------
+GATES = {
+    "AND":  lambda a, b: a & b,
+    "NAND": lambda a, b: 1 - (a & b),
+    "OR":   lambda a, b: a | b,
+    "NOR":  lambda a, b: 1 - (a | b),
+    "XOR":  lambda a, b: a ^ b,
+    "XNOR": lambda a, b: 1 - (a ^ b),
+}
+
+
+def linearly_separable(gate) -> bool:
+    """Can a single half-plane (one axis + threshold) realise the gate?
+
+    AND/NAND/OR/NOR are single-half-plane gates; XOR/XNOR are not -- they need an
+    axis AND its orthogonal/complement.  (Grid search over thresholds.)
+    """
+    pts = [(0, 0), (0, 1), (1, 0), (1, 1)]
+    grid = np.linspace(-2, 2, 17)
+    for w1 in grid:
+        for w2 in grid:
+            for th in np.linspace(-4, 4, 33):
+                ok = all((w1 * a + w2 * b - th > 0) == bool(gate(a, b)) for a, b in pts)
+                if ok:
+                    return True
+    return False
+
+
+def verify_gates() -> dict:
+    """How the four gate families sit on the circle, all checks exact."""
+    real_is_xnor = imag_is_xor = and_is_plus1 = nor_is_minus1 = 0.0
+    for m, z in MINTERM_TO_C.items():
+        a, b = m
+        is_real = 1 if abs(z.imag) < 1e-9 else 0
+        is_imag = 1 if abs(z.real) < 1e-9 else 0
+        real_is_xnor = max(real_is_xnor, abs(GATES["XNOR"](a, b) - is_real))
+        imag_is_xor = max(imag_is_xor, abs(GATES["XOR"](a, b) - is_imag))
+        and_is_plus1 = max(and_is_plus1, abs(GATES["AND"](a, b) - (1 if z == 1 else 0)))
+        nor_is_minus1 = max(nor_is_minus1, abs(GATES["NOR"](a, b) - (1 if z == -1 else 0)))
+
+    separable = {name: linearly_separable(g) for name, g in GATES.items()}
+    return {
+        "XNOR == real axis {1,-1} (err)": real_is_xnor,
+        "XOR == imaginary axis {i,-i} (err)": imag_is_xor,
+        "AND == the +1 pole (err)": and_is_plus1,
+        "NOR == the -1 pole (err)": nor_is_minus1,
+        "separable (one half-plane)": separable,
+    }
+
+
+def make_gate_figure(res_g: dict):
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.4, 5.0),
+                                  gridspec_kw={"width_ratios": [1.1, 1]})
+
+    # panel A: gates on the circle
+    th = np.linspace(0, 2 * np.pi, 400)
+    ax.plot(np.cos(th), np.sin(th), color="0.75", lw=1.2)
+    ax.plot([-1.25, 1.25], [0, 0], color="#2ca02c", lw=2)          # XNOR / agreement axis
+    ax.plot([0, 0], [-1.25, 1.25], color="#d62728", lw=2, ls="--")  # XOR / disagreement axis
+    pole = {1 + 0j: ("AB = 1", "AND pole", "#1f77b4"),
+            -1 + 0j: ("!A!B = -1", "NOR pole", "#1f77b4"),
+            0 + 1j: ("A!B = i", "XOR", "#d62728"),
+            0 - 1j: ("!AB = -i", "XOR", "#d62728")}
+    for z, (lab, role, col) in pole.items():
+        ax.plot([z.real], [z.imag], "o", color=col, ms=9, zorder=5)
+        ax.annotate(f"{lab}\n({role})", (z.real, z.imag), textcoords="offset points",
+                    xytext=(20 * (z.real if z.real else 0.0),
+                            22 * (z.imag if z.imag else 1.0) * (1 if z.imag >= 0 else 1)),
+                    ha="center", fontsize=9, fontweight="bold", color=col)
+    ax.text(0.92, 0.10, "XNOR\n(agree)", color="#2ca02c", fontsize=9, ha="center")
+    ax.text(0.16, 0.93, "XOR\n(disagree)", color="#d62728", fontsize=9, ha="center")
+    ax.set_aspect("equal"); ax.set_xlim(-1.7, 1.7); ax.set_ylim(-1.7, 1.7); ax.axis("off")
+    ax.set_title("Each axis: an XNOR(agree)/XOR(disagree) half-split;\n"
+                 "the poles are AND (+1) and NOR (-1)", fontsize=10)
+
+    # panel B: separability -- AND is one half-plane, XOR needs two
+    for axis_pts, title, gate in [(None, None, None)]:
+        pass
+    ax2.set_title("AND = one half-plane (one axis); XOR needs an axis\n"
+                  "AND its orthogonal/complement", fontsize=10)
+    sq = [(0, 0), (0, 1), (1, 0), (1, 1)]
+    for (a, b) in sq:
+        # colour by XOR to show the diagonal (non-separable) pattern
+        c = "#d62728" if (a ^ b) else "#2ca02c"
+        ax2.plot([a], [b], "o", ms=16, color=c, zorder=5)
+        ax2.annotate(f"{'A' if a else '!A'}{'B' if b else '!B'}", (a, b),
+                     textcoords="offset points", xytext=(0, 18), ha="center", fontsize=9)
+    # AND separating line (one axis): A + B = 1.5
+    ax2.plot([1.5, -0.5], [0.0, 2.0], color="#1f77b4", lw=2, label="AND: one half-plane")
+    # XOR needs two lines: A+B=0.5 and A+B=1.5
+    ax2.plot([0.5, -0.5], [0.0, 1.0], color="#d62728", lw=1.4, ls="--",
+             label="XOR: needs two (axis + orthogonal)")
+    ax2.plot([1.5, 0.5], [0.0, 1.0], color="#d62728", lw=1.4, ls="--")
+    ax2.set_xlim(-0.7, 1.9); ax2.set_ylim(-0.5, 2.2); ax2.set_aspect("equal")
+    ax2.set_xlabel("A"); ax2.set_ylabel("B")
+    ax2.legend(fontsize=8, loc="upper right")
+
+    fig.suptitle("The gate decomposition: XNOR/XOR (agree/disagree) + AND/NOR poles, "
+                 "per orthogonal axis pair", y=1.0, fontsize=12.5)
+    path = os.path.join(FIG_DIR, "fig18_gates.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
+
+
 def make_figure(res_h: dict):
     fig = plt.figure(figsize=(13.5, 4.6))
     gs = fig.add_gridspec(1, 3, width_ratios=[1.15, 1, 1])
@@ -302,8 +407,15 @@ def main():
     print("  rotated conjugation C_theta(z) = e^{2i theta} conj(z):")
     for k, v in verify_rotation().items():
         print(f"    {k:<32} {v:.2e}")
+    res_g = verify_gates()
+    print("  gate decomposition:")
+    for k, v in res_g.items():
+        if isinstance(v, float):
+            print(f"    {k:<38} {v:.2e}")
+    print(f"    separable (one half-plane): {res_g['separable (one half-plane)']}")
     make_figure(res_h)
     make_rotation_figure()
+    make_gate_figure(res_g)
 
 
 if __name__ == "__main__":
