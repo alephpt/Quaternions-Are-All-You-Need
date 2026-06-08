@@ -755,14 +755,6 @@ each "half" a whole standing over its part. Output-complement is the lattice's
 top–bottom mirror: $\mathrm{AND}^{c}=\mathrm{NAND}$, $\mathrm{NOR}^{c}=\mathrm{OR}$,
 $\mathrm{XOR}^{c}=\mathrm{XNOR}$ (point reflection through the centre).
 
-![the gate lattice](../figures/fig19_lattice.png)
-
-*Figure 19. The gates as a whole/part lattice, ordered by the size of their true-set:
-$\bot=\varnothing$ at the bottom, $\top$ at the top, the two complementary halves
-(XNOR, XOR) across the middle, the poles (AND, NOR) as parts beneath. Orange marks the
-superset $\supset$ subset pairs XNOR$\supset$AND and NAND$\supset$XOR; complement is
-the point reflection through the centre.*
-
 **The dynamics.** One axis cuts the circle into a half-plane — and indeed
 AND, NAND, OR, NOR are each realisable by a *single* half-plane, while **XOR and XNOR
 are not**: parity needs an axis *together with its orthogonal/complement* (verified by
@@ -777,6 +769,16 @@ lattice itself — whole over part, half against half — is invariant.
 *Figure 18. Left: XNOR is the agreement (real) half, XOR the disagreement (imaginary)
 half; the poles are AND $(+1)$ and NOR $(-1)$. Right: AND is one half-plane, XOR needs
 an axis and its orthogonal — the parity gates are the genuinely two-axis ones.*
+
+Collected into one picture, the gates form an inclusion lattice — the whole/part view:
+
+![the gate lattice](../figures/fig19_lattice.png)
+
+*Figure 19. The gates as a whole/part lattice, ordered by the size of their true-set:
+$\bot=\varnothing$ at the bottom, $\top$ at the top, the two complementary halves
+(XNOR, XOR) across the middle, the poles (AND, NOR) as parts beneath. Orange marks the
+superset $\supset$ subset pairs XNOR$\supset$AND and NAND$\supset$XOR; complement is
+the point reflection through the centre.*
 
 So, per orthogonal axis pair, the structure is a single lattice read two ways: *half
 agreement (XNOR, with the AND/NOR poles as its parts) and half disagreement (XOR, part
