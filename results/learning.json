@@ -48,11 +48,30 @@
     ],
     "noise": 0.15
   },
+  "fast_equivalence": {
+    "forward": 8.881784197001252e-16,
+    "dX": 8.881784197001252e-16,
+    "dW": 2.220446049250313e-15
+  },
+  "benchmark_ms": {
+    "real (h=64)": {
+      "step_ms": 0.2117487550003716,
+      "eval_ms": 3.5089287700020577
+    },
+    "quaternion-fast (BLAS)": {
+      "step_ms": 0.42719170000054874,
+      "eval_ms": 3.6603902899992136
+    },
+    "quaternion-einsum": {
+      "step_ms": 10.473390095000923,
+      "eval_ms": 92.04433664000135
+    }
+  },
   "apples_to_apples": {
     "quaternion (H=16, 64-dim)": {
       "params": 1348,
-      "final_test_mse": 0.016983904142505765,
-      "train_time_s": 96.9523501560002,
+      "final_test_mse": 0.01698390414250568,
+      "train_time_s": 4.612865656999929,
       "steps_to_threshold": {
         "0.1": 2175,
         "0.05": 3100,
@@ -62,7 +81,7 @@
     "real param-matched (h=31)": {
       "params": 1399,
       "final_test_mse": 0.0038134293015345895,
-      "train_time_s": 2.2711266299997988,
+      "train_time_s": 2.136381567999706,
       "steps_to_threshold": {
         "0.1": 300,
         "0.05": 425,
@@ -72,7 +91,7 @@
     "real capacity-matched (h=64)": {
       "params": 4996,
       "final_test_mse": 0.0015103824335019418,
-      "train_time_s": 3.956963459000235,
+      "train_time_s": 3.510740073999841,
       "steps_to_threshold": {
         "0.1": 175,
         "0.05": 250,

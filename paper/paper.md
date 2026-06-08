@@ -22,8 +22,10 @@ distributivity and non-contradiction** — at the sole cost of commutativity. Th
 quaternions are not one option among many for realising the imaginaries in higher
 dimension; up to the laws we demand, they are the only one. We then extend the
 study in three directions: the $2\pi\!\to\!4\pi$ doubling (the double cover
-SU(2)$\to$SO(3), where $\sigma$ reads the half-angle); the observation that the
-Cayley table is the *atomic cell* of the Dirac algebra ($Cl(1,3)\cong M_2(\mathbb{H})$);
+SU(2)$\to$SO(3), where $\sigma$ reads the half-angle), which we trace through the key
+$2\pi$/$4\pi$ equations of mathematics and physics — circle vs. sphere, $U(1)$ vs.
+$SU(2)$; the observation that the Cayley table is the *atomic cell* of the Dirac
+algebra ($Cl(1,3)\cong M_2(\mathbb{H})$);
 and a from-scratch quaternion neural network, where a **true apples-to-apples**
 study finds the Hamilton prior is *not* a universal win — it underperforms a real
 network on tasks it does not fit, but is markedly more **sample-efficient** when
@@ -181,7 +183,7 @@ non-commutativity — visible at a glance.
 
 ![Cayley table of the Hamilton product](../figures/fig5_cayley.png)
 
-*Figure 2. $ij=k$ but $ji=-k$: associativity and distributivity hold, commutativity
+*Figure 5. $ij=k$ but $ji=-k$: associativity and distributivity hold, commutativity
 does not.*
 
 ### 3.2 The phase-additive operator breaks both in $\mathbb{H}$
@@ -204,7 +206,7 @@ refute the universal laws, and Section 5 exhibits whole populations of them. $\s
 
 The contrast is exactly the BCH commutator: when $a,b$ nearly commute the residual
 is tiny, and when they do not it is order one. This produces the *bimodal* residual
-distribution seen in Figure 4.
+distribution seen in Figure 2.
 
 ### 3.3 Non-contradiction
 
@@ -267,7 +269,7 @@ agree on the order of magnitude, which is all the decision rule uses.
 
 ![Law survival matrix](../figures/fig4_law_matrix.png)
 
-*Figure 3. Maximum residual for each law across operator and domain. Green = holds
+*Figure 4. Maximum residual for each law across operator and domain. Green = holds
 (machine precision), red = broken (order one). The single red column on the right is
 the phase-additive operator in $\mathbb{H}$.*
 
@@ -289,7 +291,7 @@ it leaves the plane.
 
 ![Associativity residuals](../figures/fig2_associativity.png)
 
-*Figure 4. Residual $\lVert(ab)c-a(bc)\rVert$. In $\mathbb{C}$ (left) both operators
+*Figure 2. Residual $\lVert(ab)c-a(bc)\rVert$. In $\mathbb{C}$ (left) both operators
 sit in the machine-precision band. In $\mathbb{H}$ (right) Hamilton stays there
 while the phase-additive operator splits off a second mode near $10$ — exactly the
 BCH commutator population of Theorem 3.*
@@ -298,7 +300,7 @@ BCH commutator population of Theorem 3.*
 
 ![Distributivity residuals](../figures/fig3_distributivity.png)
 
-*Figure 5. Residual $\lVert a(b{+}c)-(ab{+}ac)\rVert$. Same verdict: distributivity is
+*Figure 3. Residual $\lVert a(b{+}c)-(ab{+}ac)\rVert$. Same verdict: distributivity is
 a machine-precision fact for the Hamilton product and a macroscopic failure for the
 non-bilinear phase-additive operator in $\mathbb{H}$.*
 
@@ -351,10 +353,10 @@ ends in higher dimension. Three imaginary directions do not commute, and *someth
 must give:
 
 * keep **commutativity** by adding phases, and you **lose associativity and
-  distributivity** — the algebra stops being an algebra (Theorem 3, Figures 3–5);
+  distributivity** — the algebra stops being an algebra (Theorem 3, Figures 2–4);
 * keep **associativity and distributivity** with the Hamilton product, and you lose
   **only commutativity** — a true, non-contradictory fact, not an inconsistency
-  (Theorems 1, 2, 4, Figures 3, 6, 7).
+  (Theorems 1, 2, 4, Figures 4, 6, 7).
 
 Distributivity and associativity are the laws that make a *ring*; without them there
 is no well-defined arithmetic to speak of, no factoring, no linear structure. Among
@@ -443,39 +445,18 @@ isolation. A quaternion layer of shape $(n_\text{out},n_\text{in})$ has
 $4\,n_\text{out}n_\text{in}$ weights, a quarter of a dense real layer between the
 same spaces — the Hamilton product is a hard-wired weight-sharing prior.
 
-### 9.1 It learns — but a true apples-to-apples test is unflattering
+### 9.1 It learns
 
-We learn the rotation action $p'=r\otimes p\otimes r^{*}$ from data. A quaternion
-hidden layer of width $H$ carries $4H$ real activations, so there are two honest real
-baselines: **param-matched** (same scalar count) and **capacity-matched** (same real
-hidden dimension $4H$, hence $\sim$4× the parameters). Capacity-matching isolates the
-prior alone.
-
-| model | params | wall-clock | final MSE | steps→0.10 | →0.05 | →0.03 |
-|---|---:|---:|---:|---:|---:|---:|
-| quaternion ($H{=}16$, 64-dim) | 1348 | 97.0 s | 0.0170 | 2175 | 3100 | 4150 |
-| real param-matched ($h{=}31$) | 1399 | 2.3 s | 0.0038 | 300 | 425 | 575 |
-| real capacity-matched ($h{=}64$) | 4996 | 4.0 s | 0.0015 | 175 | 250 | 300 |
-
-![apples to apples](../figures/fig13_apples_to_apples.png)
-
-*Figure 13. On $p'=r\,p\,r^{*}$ the quaternion MLP needs $\sim$7× more steps to each
-threshold and reaches higher final error.*
+We learn the rotation action $p'=r\otimes p\otimes r^{*}$ from data — the spinor
+action of Section 7, now *estimated* rather than computed. The quaternion network
+unambiguously **learns**: held-out $R^2=0.90$, an order of magnitude better than the
+mean predictor. It is, however, outperformed by a real MLP of the same size — a gap
+we quantify carefully in Section 9.3.
 
 ![learning curve and held-out fit](../figures/fig11_learning.png)
 
 *Figure 11. The quaternion MLP learns the rotation action (held-out $R^2=0.90$),
 decisively beating the mean predictor — but trailing a parameter-matched real MLP.*
-
-The quaternion network unambiguously **learns** (it beats the mean predictor by an
-order of magnitude). But on this task it is **worse on every axis** — steps,
-final error, and wall-clock. Two causes, kept separate: (i) *representational* — the
-sandwich $r\,p\,r^{*}$ is conjugation, not a chain of left-multiplications, so the
-Hamilton-block prior is simply the **wrong prior** and underfits; (ii)
-*implementation* — the wall-clock gap is partly an artifact of an unoptimised einsum
-layer with frequent evaluation, which is why we report steps-to-threshold as the
-fairer efficiency metric (and it, too, favours the real net here). The honest verdict:
-**the Hamilton prior is not a free efficiency win.**
 
 ### 9.2 Where the prior pays: sample efficiency on quaternion-native data
 
@@ -497,7 +478,118 @@ samples than a 16-DOF real layer:
 generalises from far fewer samples; the gap narrows as data grows — the signature of
 a correct, restrictive inductive bias.*
 
-## 10. Synthesis
+### 9.3 A true apples-to-apples test
+
+Back to the rotation action of Section 9.1, made fair. A quaternion hidden layer of
+width $H$ carries $4H$ real activations, so there are two honest real baselines:
+**param-matched** (same scalar count) and **capacity-matched** (same real hidden
+dimension $4H$, hence $\sim$4× the parameters). Capacity-matching isolates the prior
+alone, and we measure parameters, wall-clock, final error, and steps to reach each
+accuracy threshold.
+
+| model | params | wall-clock† | final MSE | steps→0.10 | →0.05 | →0.03 |
+|---|---:|---:|---:|---:|---:|---:|
+| quaternion ($H{=}16$, 64-dim) | 1348 | 4.6 s | 0.0170 | 2175 | 3100 | 4150 |
+| real param-matched ($h{=}31$) | 1399 | 2.1 s | 0.0038 | 300 | 425 | 575 |
+| real capacity-matched ($h{=}64$) | 4996 | 3.6 s | 0.0015 | 175 | 250 | 300 |
+
+†with the optimised (BLAS) quaternion layer of Section 9.4; the unoptimised einsum
+layer takes 97 s for the identical result.
+
+![apples to apples](../figures/fig13_apples_to_apples.png)
+
+*Figure 13. On $p'=r\,p\,r^{*}$ the quaternion MLP needs $\sim$7× more steps to each
+threshold and reaches higher final error than the real baselines.*
+
+The quaternion network is **worse on every axis** here — steps, final error, and
+(with the naive implementation) wall-clock. Two causes, kept separate: (i)
+*representational* — the sandwich $r\,p\,r^{*}$ is conjugation, not a chain of
+left-multiplications, so the Hamilton-block prior is simply the **wrong prior** and
+underfits; (ii) *implementation* — the wall-clock gap is an artifact of an unoptimised
+einsum layer, removed in Section 9.4. Steps-to-threshold is the
+implementation-independent metric, and it, too, favours the real net here. The honest
+verdict: **the Hamilton prior is not a free efficiency win** on a task it does not fit.
+
+### 9.4 Implementation: einsum vs. BLAS (documenting both)
+
+Because the Hamilton product is bilinear, $w\otimes x = L(w)\,x$ with the $4\times4$
+left-multiplication matrix $L(w)=\sum_p w_p M_p$. The naive layer evaluates this with
+a per-sample einsum; the optimised layer assembles the block matrix once and defers
+to a single BLAS matmul. The two are **bit-for-bit identical** (forward, $dX$, $dW$
+all agree to $\sim10^{-15}$), so they produce *exactly* the same learning curve and
+steps-to-threshold — only the wall-clock differs.
+
+| layer | train step (B=128) | full-set forward (B=4000) |
+|---|---:|---:|
+| real ($h{=}64$) | 0.21 ms | 3.51 ms |
+| quaternion — BLAS (optimised) | 0.40 ms | 3.69 ms |
+| quaternion — einsum (naive) | 10.44 ms | 91.75 ms |
+
+![both implementations](../figures/fig14_compute.png)
+
+*Figure 14. The naive einsum layer is $\sim$26× slower per step; the optimised layer
+is within $\sim$2× of a real layer of the same hidden dimension — consistent with the
+two having comparable FLOPs. The earlier 97 s wall-clock was implementation, not
+algebra.*
+
+This is the honest compute picture: a quaternion layer is *not* inherently expensive;
+with a sane implementation it is competitive in wall-clock. Its disadvantage on the
+sandwich task is purely the representational mismatch of Section 9.3, not arithmetic
+cost.
+
+## 10. The $2\pi/4\pi$ ledger: where these constants come from
+
+Section 7 turned on the factor of two between the circle ($2\pi$) and the spinor
+($4\pi$). That factor is not special to quaternions — it is the same step, from the
+circle to the sphere, that recurs across mathematics and physics wherever these two
+constants appear. We catalogue the principal cases and locate the framework within
+them.
+
+The organising fact is geometric, and we verify it numerically (`src/ledger.py`):
+
+* $2\pi$ is the measure of the **1-sphere** $S^1$ — a circle (circumference
+  $=2\pi$). It is the home of $e^{i\theta}$, the group $U(1)$, and the complex
+  numbers: **one** imaginary direction.
+* $4\pi$ is the measure of the **2-sphere** $S^2$ — surface area $4\pi r^2$, total
+  solid angle $4\pi$ (numerically $12.566$), and total Gaussian curvature
+  $\int_{S^2}K\,dA = 2\pi\chi = 4\pi$ by Gauss–Bonnet. It is the home of the spinor
+  $q(4\pi)=1$, the group $SU(2)$, and the quaternions: **three** imaginary
+  directions $i,j,k$.
+
+The ratio is exactly $2$ — the double cover $SU(2)\to U(1)$'s circle, the half-angle
+of Section 7.
+
+| domain | $2\pi$ form (circle / $U(1)$ / $\mathbb{C}$) | $4\pi$ form (sphere / $SU(2)$ / $\mathbb{H}$) | how it relates |
+|---|---|---|---|
+| geometry | circumference $C=2\pi r$ ($S^1$) | area $A=4\pi r^2$, solid angle $\Omega=4\pi$ ($S^2$) | **core**: the measures of the two spheres |
+| curvature | turning $\oint\kappa\,ds=2\pi$ (plane curve) | $\int_{S^2}K\,dA=4\pi$ (Gauss–Bonnet, $\chi=2$) | **core**: total curvature of circle vs sphere |
+| algebra | $e^{2\pi i}=1$, $U(1)$, $\mathbb{C}$ | $q(4\pi)=1$, $SU(2)$, $\mathbb{H}$ | **core**: the framework — 1 vs 3 imaginary axes |
+| spin | spin-1 returns at $2\pi$ | spin-$\tfrac12$ returns only at $4\pi$ | **core**: double cover / the spinor sign |
+| electrostatics | — | Coulomb $F=\dfrac{q_1q_2}{4\pi\varepsilon_0 r^2}$; Gauss $\oint\!\mathbf E\!\cdot\!d\mathbf A=Q/\varepsilon_0$ | field spreads over $S^2$ → $4\pi$ |
+| gravitation | — | Poisson $\nabla^2\Phi=4\pi G\rho$; Einstein $G_{\mu\nu}=\dfrac{8\pi G}{c^4}T_{\mu\nu}$ ($8\pi=2\cdot4\pi$) | flux through $S^2$ → $4\pi$ |
+| waves / QM | $\omega=2\pi f$, $k=2\pi/\lambda$, $\hbar=h/2\pi$ | — | one phase cycle = one trip round $S^1$ |
+| complex analysis | $\oint \dfrac{dz}{z}=2\pi i$ (residues) | — | winding once around $U(1)$ |
+| probability | $\int e^{-x^2/2}dx=\sqrt{2\pi}$ | — | the circular Gaussian / $S^1$ normalisation |
+
+![the 2pi/4pi ledger](../figures/fig15_ledger.png)
+
+*Figure 15. Left: the $2\pi$ world — the circle, $U(1)$, $\mathbb{C}$, one imaginary
+axis. Right: the $4\pi$ world — the sphere, $SU(2)$, $\mathbb{H}$, the three imaginary
+axes $i,j,k$. The constant $4\pi=2\cdot2\pi$ is the double cover.*
+
+Two honest distinctions. The **core** rows are genuinely the same phenomenon as the
+framework: the move from one imaginary direction to three is the move from $S^1$ to
+$S^2$, and from period $2\pi$ to period/measure $4\pi$. The **field-law** rows
+(Coulomb, Gauss, Poisson, Einstein) carry $4\pi$ for a *related but distinct* reason —
+a source radiates through the enclosing 2-sphere, whose solid angle is $4\pi$ — so
+they share the geometry of $S^2$ without invoking spin or quaternions directly. The
+$2\pi$ rows (Fourier, Cauchy, $\hbar$) are the circle/$U(1)$ shadow, the complex
+half of the ledger. The pattern is consistent and, we think, clarifying: **$2\pi$ is
+the signature of the complex circle; $4\pi$ is the signature of the quaternionic
+sphere; and physics reaches for $4\pi$ exactly when a quantity lives on, or spreads
+through, three-dimensional space.**
+
+## 11. Synthesis
 
 Two claims, at two confidence levels. The **algebraic** claim is settled: among
 finite-dimensional associative real division algebras, the Hamilton product is the
@@ -509,10 +601,10 @@ The **learning** claim is conditional and we state it without inflation: the Ham
 product is a strong *prior*, not a universal speedup. When the data carries genuine
 multiplicative quaternion structure it buys real sample- and parameter-efficiency
 (Section 9.2); when it does not, it is the wrong prior and a plain real network wins
-outright (Section 9.1). The interesting, defensible thesis to pursue is therefore not
+outright (Section 9.3). The interesting, defensible thesis to pursue is therefore not
 "quaternions beat real networks," but: **the SU(2)/$4\pi$ structure of Sections 7–8
 is a correct and sample-efficient inductive bias for data with rotational/spinorial
-structure** — a claim Thread 9.2 already supports and that future work can test at
+structure** — a claim Section 9.2 already supports and that future work can test at
 scale.
 
 ---
@@ -525,7 +617,8 @@ python src/verification.py     # residual table -> results/metrics.json
 python src/plots.py            # Part I figures fig1..fig8
 python src/spinor.py           # Section 7  -> fig9
 python src/dirac.py            # Section 8  -> fig10
-python src/qnn.py              # Section 9  -> fig11, fig12, fig13; results/learning.json
+python src/qnn.py              # Section 9  -> fig11..fig14; results/learning.json
+python src/ledger.py           # Section 10 -> fig15
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,
@@ -534,8 +627,10 @@ python src/qnn.py              # Section 9  -> fig11, fig12, fig13; results/lear
 * `src/plots.py` — the Part I figures.
 * `src/spinor.py` — Section 7, the $2\pi/4\pi$ doubling.
 * `src/dirac.py` — Section 8, the Pauli/Dirac connection.
-* `src/qnn.py` — Section 9, the quaternion MLP (grad-checked), apples-to-apples and
-  sample-efficiency studies.
+* `src/qnn.py` — Section 9, the quaternion MLP (grad-checked), the einsum and BLAS
+  layers (proven equivalent), apples-to-apples, sample-efficiency, and compute
+  benchmarks.
+* `src/ledger.py` — Section 10, the $2\pi/4\pi$ geometric roots and ledger figure.
 * `results/metrics.json`, `results/learning.json` — machine-readable records.
 
 ## Appendix B. Notation

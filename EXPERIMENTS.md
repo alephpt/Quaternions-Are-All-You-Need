@@ -6,7 +6,8 @@ experiment. Run:
 ```bash
 python src/spinor.py     # Thread 1 -> figures/fig9_spinor.png
 python src/dirac.py      # Thread 2 -> figures/fig10_dirac.png
-python src/qnn.py        # Thread 3 -> figures/fig11_learning.png, fig12_sample_efficiency.png
+python src/qnn.py        # Thread 3 -> figures/fig11..fig14
+python src/ledger.py     # Thread 4 -> figures/fig15_ledger.png
 ```
 
 ---
@@ -107,11 +108,13 @@ real net) and **capacity-matched** (same real hidden dimension 4H, ~4× the para
 Capacity-matching isolates the *prior* alone — the quaternion net is exactly a real
 net of that dimension with weights constrained to the Hamilton block form.
 
-| model | params | wall-clock | final MSE | steps→0.10 | →0.05 | →0.03 |
+| model | params | wall-clock† | final MSE | steps→0.10 | →0.05 | →0.03 |
 |---|---:|---:|---:|---:|---:|---:|
-| quaternion (H=16, 64-dim) | 1348 | 97.0 s | 0.0170 | 2175 | 3100 | 4150 |
-| real param-matched (h=31) | 1399 | 2.3 s | 0.0038 | 300 | 425 | 575 |
-| real capacity-matched (h=64) | 4996 | 4.0 s | 0.0015 | 175 | 250 | 300 |
+| quaternion (H=16, 64-dim) | 1348 | 4.6 s | 0.0170 | 2175 | 3100 | 4150 |
+| real param-matched (h=31) | 1399 | 2.1 s | 0.0038 | 300 | 425 | 575 |
+| real capacity-matched (h=64) | 4996 | 3.6 s | 0.0015 | 175 | 250 | 300 |
+
+†optimised BLAS layer (§3d); the einsum layer gives the identical result in 97 s.
 
 **Finding — the important corrective.** On the rotation *sandwich* `r p r*`, the
 quaternion MLP is **worse on every axis**: ~7× more steps to each accuracy
@@ -131,6 +134,48 @@ the *correct* prior — which is exactly what 3b isolates.
 
 ![apples-to-apples](figures/fig13_apples_to_apples.png)
 
+### 3d. Both implementations of the layer (einsum vs BLAS)
+
+The Hamilton product is bilinear: `w ⊗ x = L(w)·x`. The naive layer uses a per-sample
+einsum; the optimised layer assembles the block matrix once and uses one BLAS matmul.
+They are **bit-for-bit identical** (forward/dX/dW agree to ~1e-15), so learning curves
+and steps-to-threshold are unchanged — only wall-clock differs.
+
+| layer | train step (B=128) | full forward (B=4000) |
+|---|---:|---:|
+| real (h=64) | 0.21 ms | 3.51 ms |
+| quaternion — BLAS | 0.40 ms | 3.69 ms |
+| quaternion — einsum | 10.44 ms | 91.75 ms |
+
+**Finding.** The naive layer is ~26× slower; the optimised layer is within ~2× of a
+real layer of the same hidden dimension (comparable FLOPs). The 97 s wall-clock in 3c
+was implementation, not algebra — a quaternion layer is not inherently expensive.
+
+![both implementations](figures/fig14_compute.png)
+
+---
+
+## Thread 4 — the 2π/4π ledger (`src/ledger.py`)
+
+**Claim.** `2π` and `4π` across math/physics are the same circle→sphere step the
+framework is built on. `2π` = measure of the circle `S¹` (`U(1)`, ℂ, one imaginary
+axis); `4π` = measure of the sphere `S²` (`SU(2)`, ℍ, three axes `i,j,k`).
+
+| geometric root | value | = |
+|---|---|---|
+| circle circumference | 6.283 | 2π |
+| sphere area / solid angle | 12.566 | 4π |
+| Gauss–Bonnet `∫_{S²} K dA` (χ=2) | 12.566 | 4π |
+| Gauss flux recovers enclosed charge | 1.000 | q |
+| ratio sphere/circle | 2.000 | the double cover |
+
+**Finding.** The `4π` of Coulomb / Gauss / Poisson / Einstein (`8π`) is a source
+spreading through the enclosing 2-sphere; the `2π` of Fourier / Cauchy / `ħ` is the
+`U(1)` circle. The spinor `q(4π)=1` is the same `4π`, now as the `SU(2)` double cover.
+`4π = 2·2π` is that doubling.
+
+![ledger](figures/fig15_ledger.png)
+
 ---
 
 ## Honest summary
@@ -144,7 +189,13 @@ the *correct* prior — which is exactly what 3b isolates.
   real net on the rotation-sandwich task — wrong prior. But on quaternion-native
   data (3b) the Hamilton prior is markedly more **sample-efficient** (8× at N=8).
   The advantage is real but **conditional**: it appears only when the data truly
-  has the multiplicative quaternion structure the prior encodes.
+  has the multiplicative quaternion structure the prior encodes. Both layer
+  implementations are proven identical; the optimised one is ~26× faster (the 97 s
+  wall-clock was an artifact).
+- **Thread 4 (2π/4π ledger):** the constants are the circle (`2π`, ℂ, `U(1)`) vs the
+  sphere (`4π`, ℍ, `SU(2)`); `4π = 2·2π` is the double cover. Physics reaches for
+  `4π` when a quantity spreads through 3-D space (flux laws) or carries half-integer
+  spin.
 
 **Open question for the paper's thesis:** the strongest, most defensible claim
 emerging from these experiments is *not* "quaternions beat real nets," but

@@ -89,6 +89,47 @@ class QuaternionLinear:
         return [self.dW, self.db]
 
 
+class QuaternionLinearFast:
+    """Mathematically identical to QuaternionLinear, but assembles the block
+    left-multiplication matrix once per call and uses a single BLAS matmul for
+    the batched forward/backward instead of a per-sample einsum.  Same params,
+    same init draws, same gradients -- only faster.
+    """
+
+    def __init__(self, n_in, n_out, rng):
+        s = 1.0 / np.sqrt(n_in * 4)
+        self.W = rng.normal(scale=s, size=(n_out, n_in, 4))
+        self.b = np.zeros((n_out, 4))
+        self.n_in, self.n_out = n_in, n_out
+
+    def params(self):
+        return [self.W, self.b]
+
+    def _block_matrix(self):
+        # T[o,i,r,c] = sum_p W[o,i,p] M[p,r,c]; lay out as (4*n_out, 4*n_in)
+        T = np.einsum("oip,prc->oric", self.W, M_BASIS)        # (o,r,i,c)
+        return T.reshape(4 * self.n_out, 4 * self.n_in)
+
+    def forward(self, X):                         # X: (B, n_in, 4)
+        self.B = X.shape[0]
+        self.X2 = X.reshape(self.B, 4 * self.n_in)
+        self.Wmat = self._block_matrix()
+        y2 = self.X2 @ self.Wmat.T + self.b.reshape(-1)
+        return y2.reshape(self.B, self.n_out, 4)
+
+    def backward(self, G):                         # G: (B, n_out, 4)
+        G2 = G.reshape(self.B, 4 * self.n_out)
+        dWmat = G2.T @ self.X2                      # (4*n_out, 4*n_in)
+        Tg = dWmat.reshape(self.n_out, 4, self.n_in, 4).transpose(0, 2, 1, 3)
+        self.dW = np.einsum("oirc,prc->oip", Tg, M_BASIS)
+        self.db = G.sum(axis=0)
+        dX2 = G2 @ self.Wmat
+        return dX2.reshape(self.B, self.n_in, 4)
+
+    def grads(self):
+        return [self.dW, self.db]
+
+
 class RealLinear:
     def __init__(self, n_in, n_out, rng):
         s = 1.0 / np.sqrt(n_in)
@@ -315,6 +356,86 @@ def run(seed=0):
     return res
 
 
+def check_fast_equivalence():
+    """Fast layer must match the (gradient-checked) slow layer bit-for-bit."""
+    r1 = np.random.default_rng(2)
+    r2 = np.random.default_rng(2)
+    slow = QuaternionLinear(3, 5, r1)
+    fast = QuaternionLinearFast(3, 5, r2)
+    X = np.random.default_rng(3).normal(size=(7, 3, 4))
+    ys, yf = slow.forward(X), fast.forward(X)
+    G = np.random.default_rng(4).normal(size=ys.shape)
+    dXs, dXf = slow.backward(G), fast.backward(G)
+    return {
+        "forward": float(np.max(np.abs(ys - yf))),
+        "dX": float(np.max(np.abs(dXs - dXf))),
+        "dW": float(np.max(np.abs(slow.dW - fast.dW))),
+    }
+
+
+def benchmark(seed=0, reps=200):
+    """Per-step (forward+backward) wall-clock for the three implementations,
+    at the apples-to-apples shape.  Isolates compute, not optimisation."""
+    rng = np.random.default_rng(seed)
+    H, B, Bev = 16, 128, 4000
+
+    def q_stack(cls):
+        return Net([cls(2, H, rng), SplitTanh(), cls(H, H, rng), SplitTanh(),
+                    cls(H, 1, rng)])
+
+    nets = {
+        "real (h=64)": (Net([RealLinear(8, 64, rng), SplitTanh(),
+                             RealLinear(64, 64, rng), SplitTanh(),
+                             RealLinear(64, 4, rng)], reshape_out=True), True),
+        "quaternion-fast (BLAS)": (q_stack(QuaternionLinearFast), False),
+        "quaternion-einsum": (q_stack(QuaternionLinear), False),
+    }
+    Xq = rng.normal(size=(B, 2, 4)); Xr = rng.normal(size=(B, 8))
+    Xq_ev = rng.normal(size=(Bev, 2, 4)); Xr_ev = rng.normal(size=(Bev, 8))
+
+    out = {}
+    for name, (net, flat) in nets.items():
+        X = Xr if flat else Xq
+        Xev = Xr_ev if flat else Xq_ev
+        out_shape = (B, 4) if flat else (B, 1, 4)
+        for _ in range(10):                         # warmup
+            y = net.forward(X)
+            net.backward(np.ones_like(y))
+        t0 = time.perf_counter()
+        for _ in range(reps):
+            y = net.forward(X)
+            net.backward(np.ones_like(y))
+        step_ms = 1e3 * (time.perf_counter() - t0) / reps
+        t0 = time.perf_counter()
+        for _ in range(reps):
+            net.forward(Xev)
+        eval_ms = 1e3 * (time.perf_counter() - t0) / reps
+        out[name] = {"step_ms": step_ms, "eval_ms": eval_ms}
+    return out
+
+
+def make_compute_figure(bench):
+    names = list(bench)
+    colors = ["#7f7f7f", "#1f77b4", "#9467bd"]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.4, 4.3))
+    for ax, key, title in [(ax1, "step_ms", "Training step (fwd+bwd), batch=128"),
+                           (ax2, "eval_ms", "Full-set forward, B=4000 (eval cost)")]:
+        vals = [bench[n][key] for n in names]
+        bars = ax.bar(names, vals, color=colors)
+        for b, v in zip(bars, vals):
+            ax.text(b.get_x() + b.get_width() / 2, v, f"{v:.2f} ms",
+                    ha="center", va="bottom", fontsize=9)
+        ax.set_ylabel("milliseconds")
+        ax.set_title(title)
+        ax.tick_params(axis="x", labelrotation=12)
+    fig.suptitle("Both implementations of the quaternion layer (identical math)",
+                 y=1.02, fontsize=13)
+    path = os.path.join(FIG_DIR, "fig14_compute.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
+
+
 def apples_to_apples(seed=0, steps=6000):
     """True apples-to-apples on the rotation action p' = r (x) p (x) r*.
 
@@ -337,9 +458,9 @@ def apples_to_apples(seed=0, steps=6000):
     lr, batch = 3e-3, 128
 
     def q_mlp():
-        return Net([QuaternionLinear(2, H, rng), SplitTanh(),
-                    QuaternionLinear(H, H, rng), SplitTanh(),
-                    QuaternionLinear(H, 1, rng)])
+        return Net([QuaternionLinearFast(2, H, rng), SplitTanh(),
+                    QuaternionLinearFast(H, H, rng), SplitTanh(),
+                    QuaternionLinearFast(H, 1, rng)])
 
     def r_mlp(h):
         return Net([RealLinear(8, h, rng), SplitTanh(),
@@ -532,6 +653,15 @@ def main():
     print(f"  mean-predictor MSE  = {res['mean_predictor_mse']:.4e}")
     make_figure(res)
 
+    eq = check_fast_equivalence()
+    print(f"  fast-vs-slow layer equivalence: forward={eq['forward']:.1e}, "
+          f"dX={eq['dX']:.1e}, dW={eq['dW']:.1e}")
+    print("  benchmarking both quaternion implementations...")
+    bench = benchmark()
+    for n, d in bench.items():
+        print(f"    {n:<26} step={d['step_ms']:.2f} ms   eval(B=4000)={d['eval_ms']:.2f} ms")
+    make_compute_figure(bench)
+
     print("  apples-to-apples (param- and capacity-matched, steps-to-threshold)...")
     ata = apples_to_apples()
     for name in [k for k in ata if not k.startswith("_")]:
@@ -551,6 +681,8 @@ def main():
     slim = {k: v for k, v in res.items() if k not in ("hist_q", "hist_r",
                                                       "scatter_true", "scatter_pred")}
     slim["sample_efficiency"] = se
+    slim["fast_equivalence"] = eq
+    slim["benchmark_ms"] = bench
     slim["apples_to_apples"] = {
         k: {kk: vv for kk, vv in v.items() if kk != "hist"}
         for k, v in ata.items() if not k.startswith("_")

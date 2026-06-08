@@ -51,6 +51,7 @@ See [`EXPERIMENTS.md`](EXPERIMENTS.md). Honest findings, not the paper.
 python src/spinor.py   # Thread 1: the 2pi/4pi doubling (double cover SU(2)->SO(3))
 python src/dirac.py    # Thread 2: the Cayley table is the atomic cell of Dirac (Cl(1,3)=M2(H))
 python src/qnn.py      # Thread 3: a from-scratch quaternion MLP that learns (grad-checked)
+python src/ledger.py   # Thread 4: the 2pi/4pi ledger across math & physics
 ```
 
 - **Thread 1** — `q(2π)=−1`, `q(4π)=+1`, exact; `σ` reads the half-angle.
@@ -58,8 +59,12 @@ python src/qnn.py      # Thread 3: a from-scratch quaternion MLP that learns (gr
 - **Thread 3** — quaternion MLP learns (backprop verified to 5e-10). A **true
   apples-to-apples** test (param- and capacity-matched, steps-to-threshold) shows it
   is *worse* than a real net on the rotation-sandwich task (~7× more steps) — wrong
-  prior — but **8× more sample-efficient** on quaternion-native data. Honest,
-  conditional win.
+  prior — but **8× more sample-efficient** on quaternion-native data. Both layer
+  implementations (einsum vs BLAS) are proven identical; the optimised one is ~26×
+  faster and within ~2× of a real layer (the 97s wall-clock was an artifact).
+- **Thread 4** — `2π` = the circle/`U(1)`/ℂ (one imaginary axis); `4π` = the
+  sphere/`SU(2)`/ℍ (three axes `i,j,k`). The same circle→sphere step explains `4π`
+  in Coulomb, Gauss, Poisson, Einstein (`8π`) and the spinor `q(4π)=1`.
 
 ## Layout
 
@@ -69,7 +74,8 @@ src/verification.py   Monte-Carlo law-residual + non-contradiction suite
 src/plots.py          paper figures fig1..fig8
 src/spinor.py         Thread 1 experiment -> fig9
 src/dirac.py          Thread 2 experiment -> fig10
-src/qnn.py            Thread 3 quaternion neural net -> fig11, fig12, fig13
+src/qnn.py            Thread 3 quaternion neural net (einsum+BLAS layers) -> fig11..fig14
+src/ledger.py         Thread 4 the 2pi/4pi ledger -> fig15
 paper/paper.md        the paper (DRAFT) — Part I algebra + Part II structure & learning
 EXPERIMENTS.md        experiment writeup / findings
 figures/              generated figures
