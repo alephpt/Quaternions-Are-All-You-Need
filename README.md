@@ -55,9 +55,11 @@ python src/qnn.py      # Thread 3: a from-scratch quaternion MLP that learns (gr
 
 - **Thread 1** — `q(2π)=−1`, `q(4π)=+1`, exact; `σ` reads the half-angle.
 - **Thread 2** — ℍ ≅ 𝔰𝔲(2); Dirac gammas are 2×2 quaternion blocks; metric `diag(+,−,−,−)` recovered.
-- **Thread 3** — quaternion MLP learns the rotation action (R²=0.90); a real MLP is
-  better on that dense task, but the Hamilton prior wins on **sample efficiency**
-  (8× at N=8) when data is quaternion-structured. Backprop verified to 5e-10.
+- **Thread 3** — quaternion MLP learns (backprop verified to 5e-10). A **true
+  apples-to-apples** test (param- and capacity-matched, steps-to-threshold) shows it
+  is *worse* than a real net on the rotation-sandwich task (~7× more steps) — wrong
+  prior — but **8× more sample-efficient** on quaternion-native data. Honest,
+  conditional win.
 
 ## Layout
 
@@ -67,8 +69,8 @@ src/verification.py   Monte-Carlo law-residual + non-contradiction suite
 src/plots.py          paper figures fig1..fig8
 src/spinor.py         Thread 1 experiment -> fig9
 src/dirac.py          Thread 2 experiment -> fig10
-src/qnn.py            Thread 3 quaternion neural net -> fig11, fig12
-paper/paper.md        the paper (DRAFT — paused)
+src/qnn.py            Thread 3 quaternion neural net -> fig11, fig12, fig13
+paper/paper.md        the paper (DRAFT) — Part I algebra + Part II structure & learning
 EXPERIMENTS.md        experiment writeup / findings
 figures/              generated figures
 results/              metrics.json, learning.json

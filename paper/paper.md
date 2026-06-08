@@ -20,8 +20,15 @@ that the naive phase-additive rule **breaks associativity and distributivity** i
 four dimensions, while the **Hamilton product preserves associativity,
 distributivity and non-contradiction** — at the sole cost of commutativity. The
 quaternions are not one option among many for realising the imaginaries in higher
-dimension; up to the laws we demand, they are the only one. *Quaternions are all
-you need.*
+dimension; up to the laws we demand, they are the only one. We then extend the
+study in three directions: the $2\pi\!\to\!4\pi$ doubling (the double cover
+SU(2)$\to$SO(3), where $\sigma$ reads the half-angle); the observation that the
+Cayley table is the *atomic cell* of the Dirac algebra ($Cl(1,3)\cong M_2(\mathbb{H})$);
+and a from-scratch quaternion neural network, where a **true apples-to-apples**
+study finds the Hamilton prior is *not* a universal win — it underperforms a real
+network on tasks it does not fit, but is markedly more **sample-efficient** when
+the data genuinely carries multiplicative quaternion structure. *Quaternions are
+all you need — for the algebra; for learning, only when the structure is.*
 
 ---
 
@@ -335,7 +342,7 @@ Hamilton product's cross term does and the phase-additive rule cannot.*
 
 ---
 
-## 6. Discussion and conclusion
+## 6. Discussion: the algebraic verdict (Part I)
 
 The experiments confirm, on inputs we did not choose, what the theorems guarantee.
 Realising the imaginaries in one dimension is forgiving: on the unit circle, adding
@@ -358,7 +365,155 @@ associative real division algebras. Once you demand magnitude-and-direction,
 associativity, distributivity, and non-contradiction in the smallest dimension that
 holds physical space, the quaternions are not *a* choice. They are the *only* choice.
 
-Quaternions are all you need.
+This settles Part I. Part II asks what the structure *is* (Sections 7–8) and whether
+it *helps a learner* (Section 9) — and there the answer is more interesting, and
+more honest, than the title alone would suggest.
+
+---
+
+# Part II — Structure and learning
+
+## 7. The $2\pi \to 4\pi$ doubling
+
+Part I lived on the $2\pi$-periodic circle, where $1\leftrightarrow0$ and
+$-1\leftrightarrow\pi$. The quaternions are **$4\pi$-periodic**, and that doubling
+is not a curiosity — it is the deepest structural fact in the paper. A rotation by
+angle $\varphi$ about a unit axis $\mathbf n$ is the unit quaternion
+
+$$ q(\varphi) = \cos(\varphi/2) + \mathbf n\,\sin(\varphi/2), $$
+
+with a **half-angle**. Hence $q(2\pi)=-1$, not $+1$; only $q(4\pi)=+1$. Yet $q$ and
+$-q$ act identically on space, $R_q(v)=q\,v\,q^{*}=R_{-q}(v)$: the quaternion (the
+*spinor*) is $4\pi$-periodic while its action on vectors is $2\pi$-periodic. This is
+the double cover $\mathrm{SU}(2)\to\mathrm{SO}(3)$ — the belt trick, orientation
+entanglement — and it is exactly why the phase functional reads the half-angle,
+$\sigma(q(\varphi))=(\varphi/2)\,\mathbf n$. The "$-1\leftrightarrow\pi$" of the
+circle, lifted to space, *is* the spinor sign.
+
+| check | residual |
+|---|---|
+| $q(2\pi)=-1$ | $1.2\times10^{-16}$ |
+| $q(4\pi)=+1$ | $2.4\times10^{-16}$ |
+| $R_q=R_{-q}$ (spinor sign acts trivially on space) | $0$ (exact) |
+| vector returns after $2\pi$ | $2.4\times10^{-16}$ |
+
+![The 2pi/4pi doubling](../figures/fig9_spinor.png)
+
+*Figure 9. The $4\pi$ spinor $\cos(\varphi/2)$ (blue) returns to $+1$ only at $4\pi$;
+its action on space $\cos\varphi$ (red) returns at $2\pi$. Right: $\|\sigma\|$ rises
+with slope $\tfrac12$ — the half-angle — folding at the principal branch.*
+
+## 8. The Cayley table is the atomic cell of the Dirac algebra
+
+The basis products of Section 3.1 are, up to a factor of $i$, the **Pauli algebra**:
+the map
+
+$$ 1\mapsto I,\quad i\mapsto -i\sigma_x,\quad j\mapsto -i\sigma_y,\quad k\mapsto -i\sigma_z $$
+
+is an algebra isomorphism $\mathbb{H}\cong\mathfrak{su}(2)$, and the unit quaternions
+are exactly $\mathrm{SU}(2)$. The Dirac algebra of spacetime is then assembled from
+these cells: $Cl(1,3)\cong M_2(\mathbb{H})$, the $2\times2$ matrices over the
+quaternions. So the quaternionic Cayley table is not *more complete than* Dirac — it
+is the $2\times2$ **building block Dirac is made of**. Building the gamma matrices
+from quaternion (Pauli) blocks and taking their anticommutator returns the Minkowski
+metric:
+
+$$ \tfrac12\{\gamma^\mu,\gamma^\nu\} = \eta^{\mu\nu} = \mathrm{diag}(+,-,-,-). $$
+
+| check | residual |
+|---|---|
+| $\mathrm{mat}(a\otimes b)=\mathrm{mat}(a)\,\mathrm{mat}(b)$ (homomorphism) | $4.4\times10^{-15}$ |
+| unit quaternion is unitary ($UU^\dagger=I$) | $8.0\times10^{-16}$ |
+| $\det U = 1$ | $6.8\times10^{-16}$ |
+| Dirac–Clifford relation $\{\gamma^\mu,\gamma^\nu\}=2\eta^{\mu\nu}$ | $0$ (exact) |
+
+![Dirac cell](../figures/fig10_dirac.png)
+
+*Figure 10. The four Dirac gammas as $2\times2$ quaternion (Pauli) blocks, and the
+metric $\mathrm{diag}(+,-,-,-)$ recovered from their anticommutator.*
+
+## 9. Does the architecture learn? An honest study
+
+If the Hamilton product is the *right* multiplication, is it the right inductive bias
+for a learner? We build a quaternion multilayer perceptron from scratch — Hamilton-
+product linear layers $y_o=\sum_i W_{oi}\otimes x_i + b_o$ with split-tanh
+activations — in pure NumPy with manual backprop, **verified against finite
+differences to $5.3\times10^{-10}$**. No RoPE, no transformer: the algebra in
+isolation. A quaternion layer of shape $(n_\text{out},n_\text{in})$ has
+$4\,n_\text{out}n_\text{in}$ weights, a quarter of a dense real layer between the
+same spaces — the Hamilton product is a hard-wired weight-sharing prior.
+
+### 9.1 It learns — but a true apples-to-apples test is unflattering
+
+We learn the rotation action $p'=r\otimes p\otimes r^{*}$ from data. A quaternion
+hidden layer of width $H$ carries $4H$ real activations, so there are two honest real
+baselines: **param-matched** (same scalar count) and **capacity-matched** (same real
+hidden dimension $4H$, hence $\sim$4× the parameters). Capacity-matching isolates the
+prior alone.
+
+| model | params | wall-clock | final MSE | steps→0.10 | →0.05 | →0.03 |
+|---|---:|---:|---:|---:|---:|---:|
+| quaternion ($H{=}16$, 64-dim) | 1348 | 97.0 s | 0.0170 | 2175 | 3100 | 4150 |
+| real param-matched ($h{=}31$) | 1399 | 2.3 s | 0.0038 | 300 | 425 | 575 |
+| real capacity-matched ($h{=}64$) | 4996 | 4.0 s | 0.0015 | 175 | 250 | 300 |
+
+![apples to apples](../figures/fig13_apples_to_apples.png)
+
+*Figure 13. On $p'=r\,p\,r^{*}$ the quaternion MLP needs $\sim$7× more steps to each
+threshold and reaches higher final error.*
+
+![learning curve and held-out fit](../figures/fig11_learning.png)
+
+*Figure 11. The quaternion MLP learns the rotation action (held-out $R^2=0.90$),
+decisively beating the mean predictor — but trailing a parameter-matched real MLP.*
+
+The quaternion network unambiguously **learns** (it beats the mean predictor by an
+order of magnitude). But on this task it is **worse on every axis** — steps,
+final error, and wall-clock. Two causes, kept separate: (i) *representational* — the
+sandwich $r\,p\,r^{*}$ is conjugation, not a chain of left-multiplications, so the
+Hamilton-block prior is simply the **wrong prior** and underfits; (ii)
+*implementation* — the wall-clock gap is partly an artifact of an unoptimised einsum
+layer with frequent evaluation, which is why we report steps-to-threshold as the
+fairer efficiency metric (and it, too, favours the real net here). The honest verdict:
+**the Hamilton prior is not a free efficiency win.**
+
+### 9.2 Where the prior pays: sample efficiency on quaternion-native data
+
+The prior helps precisely when it is *correct*. Learning $y=Q\otimes x$ for a fixed
+unknown $Q$ from noisy data, the 4-DOF Hamilton layer recovers the map from far fewer
+samples than a 16-DOF real layer:
+
+| train samples | quaternion MSE | real MSE | advantage |
+|---:|---:|---:|---:|
+| 8 | 0.0058 | 0.0473 | **8.2×** |
+| 16 | 0.0027 | 0.0123 | 4.6× |
+| 32 | 0.0012 | 0.0040 | 3.3× |
+| 64 | 0.0008 | 0.0018 | 2.3× |
+| 256 | 0.0002 | 0.0005 | 2.5× |
+
+![sample efficiency](../figures/fig12_sample_efficiency.png)
+
+*Figure 12. When the data truly is a quaternion product, the Hamilton prior
+generalises from far fewer samples; the gap narrows as data grows — the signature of
+a correct, restrictive inductive bias.*
+
+## 10. Synthesis
+
+Two claims, at two confidence levels. The **algebraic** claim is settled: among
+finite-dimensional associative real division algebras, the Hamilton product is the
+unique way to keep associativity, distributivity and non-contradiction while
+realising magnitude-and-direction in higher dimension. For *the algebra*,
+quaternions are all you need.
+
+The **learning** claim is conditional and we state it without inflation: the Hamilton
+product is a strong *prior*, not a universal speedup. When the data carries genuine
+multiplicative quaternion structure it buys real sample- and parameter-efficiency
+(Section 9.2); when it does not, it is the wrong prior and a plain real network wins
+outright (Section 9.1). The interesting, defensible thesis to pursue is therefore not
+"quaternions beat real networks," but: **the SU(2)/$4\pi$ structure of Sections 7–8
+is a correct and sample-efficient inductive bias for data with rotational/spinorial
+structure** — a claim Thread 9.2 already supports and that future work can test at
+scale.
 
 ---
 
@@ -366,15 +521,22 @@ Quaternions are all you need.
 
 ```bash
 pip install -r requirements.txt
-python src/verification.py     # prints the residual table, writes results/metrics.json
-python src/plots.py            # writes figures/fig1..fig8 .png
+python src/verification.py     # residual table -> results/metrics.json
+python src/plots.py            # Part I figures fig1..fig8
+python src/spinor.py           # Section 7  -> fig9
+python src/dirac.py            # Section 8  -> fig10
+python src/qnn.py              # Section 9  -> fig11, fig12, fig13; results/learning.json
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,
   quaternion `exp`/`log`, the phase-additive operator, the Euler map.
 * `src/verification.py` — Monte-Carlo residual suite and non-contradiction checks.
-* `src/plots.py` — every figure in this paper.
-* `results/metrics.json` — machine-readable record of all residuals.
+* `src/plots.py` — the Part I figures.
+* `src/spinor.py` — Section 7, the $2\pi/4\pi$ doubling.
+* `src/dirac.py` — Section 8, the Pauli/Dirac connection.
+* `src/qnn.py` — Section 9, the quaternion MLP (grad-checked), apples-to-apples and
+  sample-efficiency studies.
+* `results/metrics.json`, `results/learning.json` — machine-readable records.
 
 ## Appendix B. Notation
 

@@ -99,6 +99,38 @@ grows — the signature of a correct, restrictive inductive bias.
 
 ![sample efficiency](figures/fig12_sample_efficiency.png)
 
+### 3c. True apples-to-apples on `p' = r ⊗ p ⊗ r*` (steps-to-threshold + efficiency)
+
+A quaternion hidden layer of width H quaternions carries 4H real activations, so
+there are two honest real baselines: **param-matched** (same scalar count, narrower
+real net) and **capacity-matched** (same real hidden dimension 4H, ~4× the params).
+Capacity-matching isolates the *prior* alone — the quaternion net is exactly a real
+net of that dimension with weights constrained to the Hamilton block form.
+
+| model | params | wall-clock | final MSE | steps→0.10 | →0.05 | →0.03 |
+|---|---:|---:|---:|---:|---:|---:|
+| quaternion (H=16, 64-dim) | 1348 | 97.0 s | 0.0170 | 2175 | 3100 | 4150 |
+| real param-matched (h=31) | 1399 | 2.3 s | 0.0038 | 300 | 425 | 575 |
+| real capacity-matched (h=64) | 4996 | 4.0 s | 0.0015 | 175 | 250 | 300 |
+
+**Finding — the important corrective.** On the rotation *sandwich* `r p r*`, the
+quaternion MLP is **worse on every axis**: ~7× more steps to each accuracy
+threshold, higher final error, and far slower wall-clock. Two causes, kept
+separate:
+
+- **Representational:** the sandwich `r p r*` is conjugation, not a chain of
+  left-multiplications, so the Hamilton-block prior is the *wrong* prior here — it
+  underfits (plateaus ~0.017 where the real net reaches 0.0015).
+- **Implementation:** the wall-clock gap (97 s vs 2–4 s) is partly an artifact —
+  the pure-NumPy einsum layer plus frequent full-set evaluation is unoptimised;
+  steps-to-threshold is the fairer efficiency metric, and it *also* favours the
+  real net on this task.
+
+So the quaternion prior is **not** a free efficiency win. It helps only when it is
+the *correct* prior — which is exactly what 3b isolates.
+
+![apples-to-apples](figures/fig13_apples_to_apples.png)
+
 ---
 
 ## Honest summary
@@ -108,10 +140,11 @@ grows — the signature of a correct, restrictive inductive bias.
 - **Thread 2 (Dirac):** real; the quaternion Cayley table is the atomic cell of the
   Dirac algebra (`Cl(1,3) ≅ M₂(ℍ)`), not a superset of it.
 - **Thread 3 (learning):** the architecture **does** learn in isolation
-  (verified backprop, R²=0.90), and its weight-sharing prior gives a real
-  **sample-efficiency** advantage on quaternion-structured data — but it is not a
-  free win on arbitrary tasks. That conditional, measurable advantage is the
-  honest contribution to chase.
+  (verified backprop). On a true apples-to-apples test (3c) it is *worse* than a
+  real net on the rotation-sandwich task — wrong prior. But on quaternion-native
+  data (3b) the Hamilton prior is markedly more **sample-efficient** (8× at N=8).
+  The advantage is real but **conditional**: it appears only when the data truly
+  has the multiplicative quaternion structure the prior encodes.
 
 **Open question for the paper's thesis:** the strongest, most defensible claim
 emerging from these experiments is *not* "quaternions beat real nets," but

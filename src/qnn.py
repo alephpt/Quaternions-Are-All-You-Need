@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 
 import matplotlib
 
@@ -222,7 +223,8 @@ def gradient_check():
 # ---------------------------------------------------------------------------
 # Training
 # ---------------------------------------------------------------------------
-def train(net, Xtr, Ytr, Xte, Yte, steps, lr, batch, rng, flat_out=False):
+def train(net, Xtr, Ytr, Xte, Yte, steps, lr, batch, rng, flat_out=False,
+          eval_every=50, thresholds=None):
     opt = Adam(net.params(), lr=lr)
     n = Xtr.shape[0]
     hist = {"step": [], "train": [], "test": []}
@@ -236,17 +238,28 @@ def train(net, Xtr, Ytr, Xte, Yte, steps, lr, batch, rng, flat_out=False):
         g = g.reshape(pred.shape) if not flat_out else g
         return loss, g
 
+    t0 = time.perf_counter()
     for s in range(steps):
         idx = rng.integers(0, n, size=batch)
         _, g = mse_and_grad(Xtr[idx], Ytr[idx])
         net.backward(g)
         opt.step(net.grads())
-        if s % 50 == 0 or s == steps - 1:
+        if s % eval_every == 0 or s == steps - 1:
             tr, _ = mse_and_grad(Xtr, Ytr)
             te, _ = mse_and_grad(Xte, Yte)
             hist["step"].append(s)
             hist["train"].append(tr)
             hist["test"].append(te)
+    hist["train_time_s"] = time.perf_counter() - t0
+
+    # steps to reach each test-MSE threshold (None = never reached)
+    if thresholds:
+        s2t = {}
+        for tau in thresholds:
+            hit = next((st for st, te in zip(hist["step"], hist["test"]) if te <= tau),
+                       None)
+            s2t[str(tau)] = hit
+        hist["steps_to_threshold"] = s2t
     return hist
 
 
@@ -300,6 +313,114 @@ def run(seed=0):
     res["scatter_true"] = Y_te[:, 1:].ravel().tolist()
     res["scatter_pred"] = pq[:, 1:].ravel().tolist()
     return res
+
+
+def apples_to_apples(seed=0, steps=6000):
+    """True apples-to-apples on the rotation action p' = r (x) p (x) r*.
+
+    A quaternion hidden layer of width H quaternions carries 4H real activations.
+    So there are two honest real baselines:
+      * param-matched   -- same number of trainable scalars (real net is narrower);
+      * capacity-matched -- same real hidden DIMENSION 4H (real net has ~4x params).
+    The quaternion net is exactly a real net of that hidden dimension whose weight
+    matrices are constrained to the Hamilton block form -- so capacity-matching
+    isolates the effect of the inductive bias alone.
+
+    We report params, wall-clock training time, final test MSE, and steps to reach
+    each accuracy threshold.
+    """
+    rng = np.random.default_rng(seed)
+    Xq_tr, Xr_tr, Y_tr = make_data(4000, rng)
+    Xq_te, Xr_te, Y_te = make_data(2000, rng)
+    H = 16                       # quaternion hidden width -> 64 real hidden dim
+    taus = [0.10, 0.05, 0.03]
+    lr, batch = 3e-3, 128
+
+    def q_mlp():
+        return Net([QuaternionLinear(2, H, rng), SplitTanh(),
+                    QuaternionLinear(H, H, rng), SplitTanh(),
+                    QuaternionLinear(H, 1, rng)])
+
+    def r_mlp(h):
+        return Net([RealLinear(8, h, rng), SplitTanh(),
+                    RealLinear(h, h, rng), SplitTanh(),
+                    RealLinear(h, 4, rng)], reshape_out=True)
+
+    # param-match: grow real width until params >= quaternion params
+    qref = q_mlp()
+    h_param = 8
+    while r_mlp(h_param).n_params() < qref.n_params():
+        h_param += 1
+
+    configs = {
+        "quaternion (H=16, 64-dim)": (q_mlp(), Xq_tr, Xq_te, False),
+        f"real param-matched (h={h_param})": (r_mlp(h_param), Xr_tr, Xr_te, True),
+        "real capacity-matched (h=64)": (r_mlp(4 * H), Xr_tr, Xr_te, True),
+    }
+
+    out = {}
+    for name, (net, Xtr, Xte, flat) in configs.items():
+        h = train(net, Xtr, Y_tr, Xte, Y_te, steps=steps, lr=lr, batch=batch,
+                  rng=rng, flat_out=flat, eval_every=25, thresholds=taus)
+        out[name] = {
+            "params": net.n_params(),
+            "final_test_mse": h["test"][-1],
+            "train_time_s": h["train_time_s"],
+            "steps_to_threshold": h["steps_to_threshold"],
+            "hist": h,
+        }
+    out["_taus"] = taus
+    return out
+
+
+def make_apples_figure(ata):
+    taus = ata["_taus"]
+    names = [k for k in ata if not k.startswith("_")]
+    colors = {"quaternion (H=16, 64-dim)": "#1f77b4"}
+    palette = ["#1f77b4", "#ff7f0e", "#d62728"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.4, 4.7),
+                                   gridspec_kw={"width_ratios": [1.4, 1]})
+
+    # left: learning curves with threshold lines
+    for name, col in zip(names, palette):
+        h = ata[name]["hist"]
+        ax1.plot(h["step"], h["test"], color=col, lw=2,
+                 label=f"{name}\n  {ata[name]['params']} params, "
+                       f"{ata[name]['train_time_s']:.1f}s, "
+                       f"final {ata[name]['final_test_mse']:.3f}")
+    for tau in taus:
+        ax1.axhline(tau, color="0.6", ls=":", lw=1)
+        ax1.text(ax1.get_xlim()[1], tau, f" τ={tau}", va="center",
+                 fontsize=8, color="0.4")
+    ax1.set_yscale("log")
+    ax1.set_xlabel("training step")
+    ax1.set_ylabel("test MSE")
+    ax1.set_title("Apples-to-apples: p'=r p r*  (test loss vs steps)")
+    ax1.legend(fontsize=7.5, loc="upper right")
+
+    # right: steps-to-threshold grouped bars
+    x = np.arange(len(taus))
+    w = 0.26
+    for i, (name, col) in enumerate(zip(names, palette)):
+        s2t = ata[name]["steps_to_threshold"]
+        vals = [s2t[str(t)] if s2t[str(t)] is not None else np.nan for t in taus]
+        bars = ax2.bar(x + (i - 1) * w, vals, w, color=col, label=name.split(" (")[0])
+        for xi, v in zip(x + (i - 1) * w, vals):
+            if np.isnan(v):
+                ax2.text(xi, 50, "n/a", ha="center", va="bottom", fontsize=8,
+                         rotation=90, color=col)
+    ax2.set_xticks(x, [f"τ={t}" for t in taus])
+    ax2.set_ylabel("steps to reach threshold")
+    ax2.set_title("Steps-to-threshold (lower = faster)")
+    ax2.legend(fontsize=8)
+
+    fig.suptitle("Thread 3 (apples-to-apples) — parameter, compute, and step efficiency",
+                 y=1.02, fontsize=13)
+    path = os.path.join(FIG_DIR, "fig13_apples_to_apples.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
 
 
 def sample_efficiency(seed=0):
@@ -411,6 +532,15 @@ def main():
     print(f"  mean-predictor MSE  = {res['mean_predictor_mse']:.4e}")
     make_figure(res)
 
+    print("  apples-to-apples (param- and capacity-matched, steps-to-threshold)...")
+    ata = apples_to_apples()
+    for name in [k for k in ata if not k.startswith("_")]:
+        d = ata[name]
+        print(f"    {name:<32} params={d['params']:<5} "
+              f"time={d['train_time_s']:.1f}s  final={d['final_test_mse']:.4f}  "
+              f"steps@thr={d['steps_to_threshold']}")
+    make_apples_figure(ata)
+
     print("  sample-efficiency experiment (quaternion-native data)...")
     se = sample_efficiency()
     for n, q, r in zip(se["sizes"], se["quaternion_mse"], se["real_mse"]):
@@ -421,6 +551,10 @@ def main():
     slim = {k: v for k, v in res.items() if k not in ("hist_q", "hist_r",
                                                       "scatter_true", "scatter_pred")}
     slim["sample_efficiency"] = se
+    slim["apples_to_apples"] = {
+        k: {kk: vv for kk, vv in v.items() if kk != "hist"}
+        for k, v in ata.items() if not k.startswith("_")
+    }
     with open(os.path.join(RESULTS_DIR, "learning.json"), "w") as fh:
         json.dump(slim, fh, indent=2)
     print(f"  wrote {os.path.relpath(os.path.join(RESULTS_DIR, 'learning.json'))}")

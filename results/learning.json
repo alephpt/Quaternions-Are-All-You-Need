@@ -47,5 +47,37 @@
       0.0001037808979282395
     ],
     "noise": 0.15
+  },
+  "apples_to_apples": {
+    "quaternion (H=16, 64-dim)": {
+      "params": 1348,
+      "final_test_mse": 0.016983904142505765,
+      "train_time_s": 96.9523501560002,
+      "steps_to_threshold": {
+        "0.1": 2175,
+        "0.05": 3100,
+        "0.03": 4150
+      }
+    },
+    "real param-matched (h=31)": {
+      "params": 1399,
+      "final_test_mse": 0.0038134293015345895,
+      "train_time_s": 2.2711266299997988,
+      "steps_to_threshold": {
+        "0.1": 300,
+        "0.05": 425,
+        "0.03": 575
+      }
+    },
+    "real capacity-matched (h=64)": {
+      "params": 4996,
+      "final_test_mse": 0.0015103824335019418,
+      "train_time_s": 3.956963459000235,
+      "steps_to_threshold": {
+        "0.1": 175,
+        "0.05": 250,
+        "0.03": 300
+      }
+    }
   }
 }
