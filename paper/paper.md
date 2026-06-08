@@ -39,7 +39,11 @@ relate by the correlation $\operatorname{Re}(c\bar z)=\cos\theta$ — equivalenc
 independence $(0)$, negation $(-1)$ — which we prove both as a quaternion identity (to
 $10^{-14}$ over random inputs) and as the exact correlation of $\pm1$ truth-tables; the
 independence case becomes *directional* — a 2-sphere of square-roots of $-1$ — in the
-quaternions. *Quaternions are all you need — for the algebra;
+quaternions. Made graded (a probability *mass* on each minterm), the four landmarks become
+a $2\times2$ contingency table whose mass-weighted resultant is
+$z=(P(A)+P(B)-1)+i(P(A)-P(B))$: the governing involution holds exactly when $z=0$, and the
+dependence it discards reappears, in a Born embedding, as two-qubit entanglement.
+*Quaternions are all you need — for the algebra;
 for learning, only when the structure is; and underneath, it is all Boolean logic on the
 circle.*
 
@@ -980,6 +984,89 @@ each pair excludes along the third (cross-product) axis. Right: the relational q
 $R=p\bar q$ classified — pairwise exclusions, the antipodal contradiction, the self-
 alignment, and a graded $45^\circ$ case that is half alignment and half exclusion.*
 
+### 11.7 Truthiness: a mass on each minterm
+
+So far each landmark has been crisp — a single $\pm1$ truth value. Real propositions are
+graded: let $A$ be $70\%$ true and $B$ be $40\%$ true. Then the four minterms are no longer
+points but the four cells of a **$2\times2$ contingency table**, each carrying a *mass* —
+the joint probability of that corner:
+
+$$ p_{11}=P(A\land B),\quad p_{10}=P(A\land\lnot B),\quad p_{01}=P(\lnot A\land B),\quad
+p_{00}=P(\lnot A\land\lnot B), \qquad \textstyle\sum p=1. $$
+
+The marginals $P(A)=p_{11}+p_{10}$ and $P(B)=p_{11}+p_{01}$ fix two sums; one degree of
+freedom remains — the **dependence** — bounded by the Fréchet inequalities
+$\max(0,P(A)+P(B)-1)\le p_{11}\le\min(P(A),P(B))$. We carry this through the structure in
+two contrasted embeddings.
+
+**Embedding 1 — phasor (in $\mathbb{C}$).** Give each minterm energy $=$ its mass, keep the
+landmark phase, and sum:
+
+> **Theorem 11.4 (resultant).** The mass-weighted sum of the four landmarks is
+> $$ z=p_{11}(+1)+p_{10}(+i)+p_{01}(-i)+p_{00}(-1)=\big(P(A)+P(B)-1\big)+i\big(P(A)-P(B)\big). $$
+> It depends **only on the marginals**, never on the dependence.
+> *Proof.* $\operatorname{Im}z=p_{10}-p_{01}=(P(A)-p_{11})-(P(B)-p_{11})=P(A)-P(B)$;
+> $\operatorname{Re}z=p_{11}-p_{00}=P(A)+P(B)-1$ after substituting $\sum p=1$. Neither
+> contains $p_{11}$ once the marginals are fixed. $\square$ (Confirmed to $5\times10^{-16}$
+> over $2\times10^{5}$ random distributions, `verify_truthiness`.)
+
+The real axis carries the *agreement lean* $P(A)+P(B)-1$; the imaginary axis carries the
+*marginal asymmetry* $P(A)-P(B)$. For the example $z=0.10+0.30\,i$ regardless of how $A,B$
+are coupled.
+
+**The governing involution now becomes a testable symmetry.** In the crisp case all
+energies were $1$, so $e(x)=e(y)$ when $\sigma(x)=-\sigma(y)$ held automatically. With
+masses it is a real condition on the table:
+
+> **Theorem 11.5 (the involutions are the obstructions in $z$).**
+> conjugation (the swap $A\!\leftrightarrow\!B$, i.e. $A\neg B\!\leftrightarrow\!\neg AB$)
+> preserves energy $\iff p_{10}=p_{01}\iff P(A)=P(B)\iff \operatorname{Im}z=0$; negation
+> (joint complement, $AB\!\leftrightarrow\!\neg A\neg B$) preserves energy $\iff
+> p_{11}=p_{00}\iff P(A)+P(B)=1\iff \operatorname{Re}z=0$; **both** hold $\iff z=0\iff
+> P(A)=P(B)=\tfrac12$ — the crisp symmetric circle. $\square$
+
+So $z$ measures exactly how far a truthiness state sits from the crisp framework, and its
+two components are the two involution-obstructions. Your $A,B$ ($0.7,0.4$) break
+conjugation by $\operatorname{Im}z=0.30=P(A)-P(B)$ and negation by
+$\operatorname{Re}z=0.10$.
+
+**Where the dependence went.** The phasor dropped it; the dependence is the *other* axis —
+the relational/correlation measure of §11.6, now for unequal marginals. Exactly:
+$$ \operatorname{Cov}(A,B)=p_{11}-P(A)P(B)=p_{11}p_{00}-p_{10}p_{01}, $$
+the $2\times2$ cross-product. The full table is therefore three numbers,
+$\{P(A),P(B)\}$ (the phasor $z$) $+\;\{\operatorname{Cov}\}$ (the relational axis) — two
+marginals plus one coupling.
+
+**Embedding 2 — Born (in $\mathbb{C}^2\!\otimes\mathbb{C}^2$).** Give each minterm energy
+$=\sqrt{\text{mass}}$ and treat the four as an *orthonormal basis* —
+$|\psi\rangle=\sum_k\sqrt{p_k}\,|{\rm minterm}_k\rangle$, a two-qubit amplitude state.
+
+> **Theorem 11.6 (dependence $=$ entanglement).** $|\psi\rangle$ is normalised, and its
+> $2\times2$ amplitude matrix $M=\big[\begin{smallmatrix}\sqrt{p_{11}}&\sqrt{p_{10}}\\
+> \sqrt{p_{01}}&\sqrt{p_{00}}\end{smallmatrix}\big]$ is rank-one — a **product
+> (unentangled) state** — $\iff\det M=0\iff p_{11}p_{00}=p_{10}p_{01}\iff
+> \operatorname{Cov}=0\iff A,B$ independent.
+> *Proof.* $\langle\psi|\psi\rangle=\sum p_k=1$; $\det M=\sqrt{p_{11}p_{00}}-
+> \sqrt{p_{10}p_{01}}$ shares the sign of and vanishes with $\operatorname{Cov}=
+> p_{11}p_{00}-p_{10}p_{01}$. $\square$ (`verify_truthiness`, $0$ error on the sign test.)
+
+The two embeddings are complementary: the **phasor** reads the marginal lean and discards
+the coupling; the **Born** state reads the coupling as entanglement and (in its reduced
+states) the marginals. Statistical independence of $A,B$ is exactly a product state; their
+dependence is exactly its entanglement. The crisp framework is the doubly-symmetric centre
+$P(A)=P(B)=\tfrac12$ where $z=0$ and both involutions hold.
+
+![truthiness on the four minterms](../figures/fig24_truthiness.png)
+
+*Figure 24. (A) Phasor embedding: the four landmarks sized by mass (the example
+$P(A)=0.7,P(B)=0.4$, independent); the resultant $z=0.10+0.30i$ depends only on the
+marginals. (B) The two involutions are the symmetry lines $P(A)=P(B)$ (conjugation,
+$\operatorname{Im}z=0$) and $P(A)+P(B)=1$ (negation, $\operatorname{Re}z=0$); they meet at
+the crisp centre $(\tfrac12,\tfrac12)$, and the example point sits off both. (C) Born
+embedding: as the one free dependence DOF $p_{11}$ sweeps its Fréchet range, $\det M$ and
+$\operatorname{Cov}$ vanish together exactly at independence — the unentangled product
+state.*
+
 ## 12. Synthesis
 
 Two empirical claims at two confidence levels, and one structural reading. The
@@ -1007,10 +1094,14 @@ correlation of two propositions — equivalence $(+1)$, independence $(0)$, nega
 — which we prove as a quaternion identity over random inputs and as the exact correlation
 of $\pm1$ truth-tables (Theorems 11.1–11.3). At the quaternion level the zero-correlation
 (independent) relations are exactly the unit imaginaries — the square-roots of $-1$ — which
-fan into a 2-sphere of directions. The logical *naming* of these geometric facts (calling
-independence "exclusion," and so on) is a dictionary we state explicitly, not a further
-theorem; the mathematics underneath is verified to machine precision (`src/logic.py`,
-every check 0 violations).
+fan into a 2-sphere of directions. Made graded — a probability mass on each minterm
+(§11.7) — the same four landmarks become a $2\times2$ contingency table: a phasor resultant
+$z=(P(A)+P(B)-1)+i(P(A)-P(B))$ that vanishes exactly when both involutions hold (the crisp
+centre), and a Born embedding in which statistical dependence is literally two-qubit
+entanglement. The logical *naming* of these geometric facts (calling independence
+"exclusion," and so on) is a dictionary we state explicitly, not a further theorem; the
+mathematics underneath is verified to machine precision (`src/logic.py`, every check 0
+violations).
 
 ### 12.1 Limitations
 
@@ -1051,7 +1142,7 @@ python src/spinor.py           # Section 7  -> fig9
 python src/dirac.py            # Section 8  -> fig10
 python src/qnn.py              # Section 9  -> fig11..fig14; results/learning.json
 python src/ledger.py           # Section 10 -> fig15
-python src/logic.py            # Section 11 -> fig16..fig23
+python src/logic.py            # Section 11 -> fig16..fig24
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,
@@ -1070,7 +1161,9 @@ python src/logic.py            # Section 11 -> fig16..fig23
   machine precision (the lattice, data-structure, cursor and relational-quaternion checks
   each report 0 violations); Theorems 11.1–11.3 are confirmed by `verify_relational_proofs`
   (decomposition to $6\times10^{-14}$ over $2\times10^{4}$ random quaternions) and
-  `verify_correlation_trichotomy` (the exact logical reading, 0 violations).
+  `verify_correlation_trichotomy` (the exact logical reading, 0 violations); Theorems
+  11.4–11.6 (the truthiness extension — phasor resultant and Born/entanglement readings)
+  by `verify_truthiness` (to $5\times10^{-16}$ over $2\times10^{5}$ random distributions).
 * `results/metrics.json`, `results/learning.json` — machine-readable records.
 
 ## Appendix B. Notation

@@ -829,6 +829,72 @@ def verify_correlation_trichotomy() -> dict:
     return {"checks": checks, "violations": sum(1 for v in checks.values() if not v)}
 
 
+# =============================================================================
+#  TRUTHINESS.  Put a probability MASS on each minterm (the 2x2 contingency table
+#  of two fuzzy/probabilistic propositions).  We carry it through the structure in
+#  two contrasted embeddings:
+#    * Phasor (in C):   z = sum_k p_k u_k, the mass-weighted sum of the four unit
+#      landmarks.  energy(landmark) = mass.
+#    * Born (in C^2 x C^2):  |psi> = sum_k sqrt(p_k)|minterm_k>, the four minterms
+#      as an orthonormal basis (a 2-qubit amplitude state).  energy = sqrt(mass).
+#  Landmark order/phase: AB=+1, A!B=+i, !AB=-i, !A!B=-1.
+# =============================================================================
+TRUTH_U = np.array([1 + 0j, 0 + 1j, 0 - 1j, -1 + 0j])   # AB, A!B, !AB, !A!B
+
+
+def truth_cells(pA: float, pB: float, p11: float) -> np.ndarray:
+    """The four joint masses [p11,p10,p01,p00] from the marginals and p11=P(A&B)."""
+    p10, p01 = pA - p11, pB - p11
+    return np.array([p11, p10, p01, 1.0 - p11 - p10 - p01])
+
+
+def truth_resultant(p: np.ndarray) -> complex:
+    """Mass-weighted sum of the four landmarks -> one complex number."""
+    return complex(np.dot(TRUTH_U, p))
+
+
+def verify_truthiness(n: int = 200000, seed: int = 0) -> dict:
+    """THEOREM (truthiness extension).  For any joint distribution p=[p11,p10,p01,p00]
+    with marginals P(A)=p11+p10, P(B)=p11+p01:
+      (1) the phasor resultant is z = (P(A)+P(B)-1) + i(P(A)-P(B)) -- it depends ONLY
+          on the marginals, never on the dependence;
+      (2) the governing involution (conjugation, A!B<->!AB) holds iff p10=p01 iff
+          P(A)=P(B) iff Im(z)=0; the negation involution (AB<->!A!B) holds iff
+          p11=p00 iff P(A)+P(B)=1 iff Re(z)=0; both iff z=0 iff P(A)=P(B)=1/2
+          (the crisp symmetric circle);
+      (3) the dependence dropped by (1) is the covariance, and it equals the 2x2
+          cross-product  Cov(A,B) = p11 p00 - p10 p01;
+      (4) Born embedding: |psi>=sum sqrt(p_k)|k> is normalised, and the 2x2 amplitude
+          matrix M=[[sqrt p11, sqrt p10],[sqrt p01, sqrt p00]] is rank-1 (a product /
+          unentangled state)  iff  det M=0  iff  p11 p00 = p10 p01  iff  independence.
+    Proof: each is direct algebra (see below); confirmed over random distributions. """
+    rng = np.random.default_rng(seed)
+    e_res = e_conj = e_neg = e_cov = e_norm = e_ent = 0.0
+    for _ in range(n):
+        p = rng.dirichlet([1, 1, 1, 1]); p11, p10, p01, p00 = p
+        PA, PB = p11 + p10, p11 + p01
+        z = truth_resultant(p)
+        e_res = max(e_res, abs(z.real - (PA + PB - 1)), abs(z.imag - (PA - PB)))
+        e_conj = max(e_conj, abs((p10 - p01) - (PA - PB)))          # conj obstruction
+        e_neg = max(e_neg, abs((p11 - p00) - (PA + PB - 1)))        # neg obstruction
+        cov = p11 - PA * PB
+        e_cov = max(e_cov, abs(cov - (p11 * p00 - p10 * p01)))      # Cov = cross-product
+        M = np.array([[np.sqrt(p11), np.sqrt(p10)], [np.sqrt(p01), np.sqrt(p00)]])
+        e_norm = max(e_norm, abs(float((M ** 2).sum()) - 1.0))      # <psi|psi>=1
+        # det M and Cov vanish together (independence <=> product state):
+        detM = float(np.linalg.det(M))
+        e_ent = max(e_ent, abs(np.sign(np.round(detM, 12)) - np.sign(np.round(cov, 12))))
+    errs = {
+        "(1) z = (P(A)+P(B)-1) + i(P(A)-P(B))": e_res,
+        "(2a) conj obstruction = P(A)-P(B)": e_conj,
+        "(2b) neg obstruction = P(A)+P(B)-1": e_neg,
+        "(3) Cov(A,B) = p11 p00 - p10 p01": e_cov,
+        "(4a) Born state normalised": e_norm,
+        "(4b) sign(det M) = sign(Cov) (indep <=> product)": e_ent,
+    }
+    return {"errors": errs, "max_error": max(errs.values()), "n": n}
+
+
 # --- shared lattice geometry (positions / covering edges) ---------------------
 _POS = {
     "FALSE": (0.0, 0.0),
@@ -1105,6 +1171,81 @@ def make_three_proposition_figure(res3: dict):
     print(f"  wrote {os.path.relpath(path)}")
 
 
+def make_truthiness_figure():
+    pA, pB = 0.70, 0.40
+    p = truth_cells(pA, pB, pA * pB)            # independent reference
+    p11, p10, p01, p00 = p
+    z = truth_resultant(p)
+    th = np.linspace(0, 2 * np.pi, 400)
+    fig = plt.figure(figsize=(14.2, 4.7))
+
+    # (A) phasor embedding: landmarks sized by mass + the resultant -----------
+    axA = fig.add_subplot(1, 3, 1)
+    axA.plot(np.cos(th), np.sin(th), color="0.85", lw=1.0)
+    lm = [("AB", 1 + 0j, p11, "#2ca02c"), ("A¬B", 1j, p10, "#7f7f7f"),
+          ("¬AB", -1j, p01, "#7f7f7f"), ("¬A¬B", -1 + 0j, p00, "#d62728")]
+    for name, u, mass, col in lm:
+        axA.scatter([u.real], [u.imag], s=110 + 1900 * mass, color=col, alpha=0.6,
+                    edgecolor="black", linewidths=0.8, zorder=4)
+        axA.text(u.real, u.imag, f"{mass:.2f}", ha="center", va="center",
+                 color="black", fontsize=8.2, fontweight="bold", zorder=6)
+        axA.annotate(name, (u.real, u.imag), textcoords="offset points",
+                     xytext=(40 * u.real, 42 * u.imag), ha="center", va="center",
+                     fontsize=9.5, color=col)
+    axA.annotate("", xy=(z.real, z.imag), xytext=(0, 0),
+                 arrowprops=dict(arrowstyle="-|>", color="black", lw=2.6), zorder=7)
+    axA.text(-1.85, 1.55, f"resultant $z={z.real:.2f}{z.imag:+.2f}i$", fontsize=9.5, ha="left")
+    axA.text(0, -1.78, "Re(z)=P(A)+P(B)−1 (agreement lean)\nIm(z)=P(A)−P(B) (marginal asymmetry)",
+             ha="center", fontsize=8.0, color="0.3")
+    axA.set_aspect("equal"); axA.axis("off"); axA.set_xlim(-2.0, 2.0); axA.set_ylim(-2.0, 1.8)
+    axA.set_title("(A) phasor: landmarks sized by mass\nresultant depends only on marginals",
+                  fontsize=10)
+
+    # (B) the two involutions as symmetry lines in the (P(A),P(B)) square -----
+    axB = fig.add_subplot(1, 3, 2)
+    axB.plot([0, 1], [0, 1], color="#1f77b4", lw=2,
+             label="conj. sym: P(A)=P(B)  (Im z=0)")
+    axB.plot([0, 1], [1, 0], color="#d62728", lw=2,
+             label="neg. sym: P(A)+P(B)=1  (Re z=0)")
+    axB.scatter([0.5], [0.5], s=90, color="black", zorder=5)
+    axB.annotate("crisp circle\nz=0", (0.5, 0.5), textcoords="offset points",
+                 xytext=(6, 8), fontsize=8.2)
+    axB.scatter([pA], [pB], s=90, color="#ff7f0e", zorder=5)
+    axB.annotate(f"example\n(0.7, 0.4)", (pA, pB), textcoords="offset points",
+                 xytext=(8, -22), fontsize=8.2, color="#ff7f0e")
+    axB.set_xlim(0, 1); axB.set_ylim(0, 1); axB.set_aspect("equal")
+    axB.set_xlabel("P(A)"); axB.set_ylabel("P(B)")
+    axB.legend(fontsize=7.4, loc="upper center", bbox_to_anchor=(0.5, -0.13))
+    axB.set_title("(B) involutions = symmetry lines;\ntruthiness breaks them off-centre",
+                  fontsize=10)
+
+    # (C) Born embedding: dependence = entanglement (det M, Cov vanish at indep)
+    axC = fig.add_subplot(1, 3, 3)
+    grid = np.linspace(max(0, pA + pB - 1), min(pA, pB), 200)
+    cov, det = [], []
+    for q11 in grid:
+        q = truth_cells(pA, pB, q11); q11_, q10, q01, q00 = q
+        cov.append(q11_ * q00 - q10 * q01)
+        det.append(np.sqrt(q11_ * q00) - np.sqrt(q10 * q01))
+    axC.axhline(0, color="0.8", lw=0.8)
+    axC.plot(grid, cov, color="#9467bd", lw=2, label="Cov $=p_{11}p_{00}-p_{10}p_{01}$")
+    axC.plot(grid, det, color="#2ca02c", lw=2, ls="--", label="det $M$ (Born amplitude)")
+    axC.axvline(pA * pB, color="0.5", lw=1, ls=":")
+    axC.annotate("independence\n(product state,\ndet M=Cov=0)", (pA * pB, 0),
+                 textcoords="offset points", xytext=(6, 34), fontsize=7.6, color="0.3")
+    axC.set_xlabel("$p_{11}=P(A\\wedge B)$  (the one free dependence DOF)")
+    axC.legend(fontsize=7.6, loc="lower right")
+    axC.set_title("(C) Born: dependence = entanglement\n(det M, Cov vanish together at indep.)",
+                  fontsize=10)
+
+    fig.suptitle("Truthiness: a mass on each minterm — phasor (marginals) + Born (dependence)",
+                 y=1.02, fontsize=12.5)
+    path = os.path.join(FIG_DIR, "fig24_truthiness.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
+
+
 def make_figure(res_h: dict):
     fig = plt.figure(figsize=(13.5, 4.6))
     gs = fig.add_gridspec(1, 3, width_ratios=[1.15, 1, 1])
@@ -1233,6 +1374,11 @@ def main():
     print(f"  PROOF — correlation trichotomy (logic): {res_ct['violations']} violations")
     for k, v in res_ct["checks"].items():
         print(f"    {k:<40} {v}")
+    res_tt = verify_truthiness()
+    print(f"  PROOF — truthiness extension over n={res_tt['n']} random distributions "
+          f"(max err {res_tt['max_error']:.1e}):")
+    for k, v in res_tt["errors"].items():
+        print(f"    {k:<48} {v:.2e}")
     make_figure(res_h)
     make_rotation_figure()
     make_gate_figure(res_g)
@@ -1241,6 +1387,7 @@ def main():
     make_partial_figure(res_d)
     make_cursor_figure()
     make_three_proposition_figure(res3)
+    make_truthiness_figure()
 
 
 if __name__ == "__main__":

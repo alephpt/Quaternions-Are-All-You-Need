@@ -8,7 +8,7 @@ python src/spinor.py     # Thread 1 -> figures/fig9_spinor.png
 python src/dirac.py      # Thread 2 -> figures/fig10_dirac.png
 python src/qnn.py        # Thread 3 -> figures/fig11..fig14
 python src/ledger.py     # Thread 4 -> figures/fig15_ledger.png
-python src/logic.py      # Thread 5 -> figures/fig16..fig23 (logic, rotation, gates, lattice, cursor, 2-sphere)
+python src/logic.py      # Thread 5 -> figures/fig16..fig24 (logic, rotation, gates, lattice, cursor, 2-sphere, truthiness)
 ```
 
 ---
@@ -292,6 +292,18 @@ The cursor and the partial-logic lattice are the *same* object: `PartialLogic.fr
 `(i+j)/√2` is half-align/half-exclude (`R = (1−k)/√2`) — all exact.
 
 ![three propositions](figures/fig23_three_prop.png)
+
+**Truthiness — a mass on each minterm (0 violations, max err 5e-16 over 2×10⁵ random
+distributions).** Two fuzzy propositions (e.g. P(A)=0.7, P(B)=0.4) make the four minterms a
+2×2 contingency table. *Phasor embedding* (energy=mass): the mass-weighted resultant is
+`z = (P(A)+P(B)−1) + i(P(A)−P(B))`, depending only on the marginals. The governing
+involution holds iff `Im z = 0` (conjugation, P(A)=P(B)); negation iff `Re z = 0`
+(P(A)+P(B)=1); both iff `z=0` iff P(A)=P(B)=½ — the crisp circle. The dependence the phasor
+drops is `Cov(A,B) = p₁₁p₀₀ − p₁₀p₀₁`. *Born embedding* (energy=√mass): `|ψ⟩=Σ√pₖ|k⟩` is a
+2-qubit state whose amplitude matrix is rank-1 (a product state) iff `det M = 0` iff
+`Cov=0` iff independence — i.e. **statistical dependence = entanglement**.
+
+![truthiness](figures/fig24_truthiness.png)
 
 ---
 
