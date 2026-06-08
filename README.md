@@ -43,13 +43,33 @@ precision or exactly.
 
 ![Law survival matrix](figures/fig4_law_matrix.png)
 
+## Experiments (three threads)
+
+See [`EXPERIMENTS.md`](EXPERIMENTS.md). Honest findings, not the paper.
+
+```bash
+python src/spinor.py   # Thread 1: the 2pi/4pi doubling (double cover SU(2)->SO(3))
+python src/dirac.py    # Thread 2: the Cayley table is the atomic cell of Dirac (Cl(1,3)=M2(H))
+python src/qnn.py      # Thread 3: a from-scratch quaternion MLP that learns (grad-checked)
+```
+
+- **Thread 1** — `q(2π)=−1`, `q(4π)=+1`, exact; `σ` reads the half-angle.
+- **Thread 2** — ℍ ≅ 𝔰𝔲(2); Dirac gammas are 2×2 quaternion blocks; metric `diag(+,−,−,−)` recovered.
+- **Thread 3** — quaternion MLP learns the rotation action (R²=0.90); a real MLP is
+  better on that dense task, but the Hamilton prior wins on **sample efficiency**
+  (8× at N=8) when data is quaternion-structured. Backprop verified to 5e-10.
+
 ## Layout
 
 ```
 src/framework.py      core algebra (Hamilton & phase-additive operators, e, sigma, exp/log)
 src/verification.py   Monte-Carlo law-residual + non-contradiction suite
-src/plots.py          generates figures/fig1..fig8
-paper/paper.md        the paper
+src/plots.py          paper figures fig1..fig8
+src/spinor.py         Thread 1 experiment -> fig9
+src/dirac.py          Thread 2 experiment -> fig10
+src/qnn.py            Thread 3 quaternion neural net -> fig11, fig12
+paper/paper.md        the paper (DRAFT — paused)
+EXPERIMENTS.md        experiment writeup / findings
 figures/              generated figures
-results/metrics.json  machine-readable residuals
+results/              metrics.json, learning.json
 ```
