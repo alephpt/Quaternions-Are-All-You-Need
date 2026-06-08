@@ -102,8 +102,8 @@ def make_figure(res: dict):
     keys = ["g0", "g1", "g2", "g3"]
     titles = [r"$\gamma^0$", r"$\gamma^1$", r"$\gamma^2$", r"$\gamma^3$"]
 
-    fig = plt.figure(figsize=(11.5, 5.6))
-    gs = fig.add_gridspec(2, 4, height_ratios=[1, 1.05])
+    fig = plt.figure(figsize=(12.6, 6.7))
+    gs = fig.add_gridspec(2, 4, height_ratios=[1, 1.2], hspace=0.9)
 
     # top row: the four Dirac gammas (real + imaginary encoded as signed magnitude)
     for idx, (k, t) in enumerate(zip(keys, titles)):
@@ -123,37 +123,60 @@ def make_figure(res: dict):
                                        edgecolor="0.2", lw=1.4))
         ax.set_xticks([]); ax.set_yticks([])
         ax.set_title(t)
-    fig.text(0.5, 0.52, r"Dirac gammas = 2$\times$2 blocks of quaternion (Pauli) cells "
-                        r"$\;\;\Rightarrow\;\; Cl(1,3)\cong M_2(\mathbb{H})$",
+    fig.text(0.5, 0.5, r"Dirac gammas = 2$\times$2 blocks of quaternion (Pauli) cells "
+                       r"$\;\;\Rightarrow\;\; Cl(1,3)\cong M_2(\mathbb{H})$",
              ha="center", fontsize=11)
 
-    # bottom left: recovered Minkowski metric from the anticommutator
-    ax = fig.add_subplot(gs[1, 0:2])
+    # bottom left: the quaternion Cayley table -- the ATOMIC CELL. It is
+    # associative and distributive (only commutativity fails); this is the cell
+    # that fills each 2x2 block of the gammas above.
+    axc = fig.add_subplot(gs[1, 0:2])
+    basis = {"1": F.ONE, "i": F.I, "j": F.J, "k": F.K}
+    bnames = list(basis); nb = len(bnames)
+    cell_color = np.zeros((nb, nb)); cell_lab = np.empty((nb, nb), dtype=object)
+    for r, a in enumerate(bnames):
+        for c, b in enumerate(bnames):
+            p = F.hamilton(basis[a], basis[b])
+            k_ = int(np.argmax(np.abs(p))); sgn = np.sign(p[k_])
+            cell_lab[r, c] = f"{'-' if sgn < 0 else ''}{bnames[k_]}"
+            cell_color[r, c] = sgn * (k_ + 1)
+    axc.imshow(cell_color, cmap="coolwarm", vmin=-4, vmax=4)
+    for r in range(nb):
+        for c in range(nb):
+            axc.text(c, r, cell_lab[r, c], ha="center", va="center",
+                     fontsize=13, fontweight="bold")
+    axc.set_xticks(range(nb), bnames); axc.set_yticks(range(nb), bnames)
+    axc.set_xlabel("right factor"); axc.set_ylabel("left factor")
+    axc.set_title("the atomic cell: quaternion Cayley table "
+                  r"($ij=k$, $ji=-k$)", fontsize=9.5)
+
+    # bottom middle: recovered Minkowski metric from the anticommutator
+    ax = fig.add_subplot(gs[1, 2:3])
     M = res["recovered_metric"]
-    im = ax.imshow(M, cmap="RdBu", vmin=-1, vmax=1)
+    ax.imshow(M, cmap="RdBu", vmin=-1, vmax=1)
     for r in range(4):
         for c in range(4):
-            ax.text(c, r, f"{M[r, c]:+.0f}", ha="center", va="center", fontsize=12,
+            ax.text(c, r, f"{M[r, c]:+.0f}", ha="center", va="center", fontsize=11,
                     fontweight="bold")
-    ax.set_xticks(range(4), [r"$\nu{=}0$", "1", "2", "3"])
-    ax.set_yticks(range(4), [r"$\mu{=}0$", "1", "2", "3"])
-    ax.set_title(r"$\frac{1}{2}\{\gamma^\mu,\gamma^\nu\}=\eta^{\mu\nu}=$diag$(+,-,-,-)$")
-    fig.colorbar(im, ax=ax, fraction=0.046)
+    ax.set_xticks(range(4), [r"$\nu{=}0$", "1", "2", "3"], fontsize=8)
+    ax.set_yticks(range(4), [r"$\mu{=}0$", "1", "2", "3"], fontsize=8)
+    ax.set_title(r"$\frac{1}{2}\{\gamma^\mu,\gamma^\nu\}=\eta^{\mu\nu}$" "\n"
+                 r"$=$diag$(+,-,-,-)$", fontsize=9)
 
-    # bottom right: the quaternion Cayley table as Pauli matrices (text)
-    ax = fig.add_subplot(gs[1, 2:4])
+    # bottom right: the H -> su(2) map and the verification errors
+    ax = fig.add_subplot(gs[1, 3:4])
     ax.axis("off")
     lines = [
-        r"$\mathbb{H}\to\mathfrak{su}(2)$  (algebra isomorphism):",
-        r"   $1\mapsto I,\quad i\mapsto -i\sigma_x,$",
-        r"   $j\mapsto -i\sigma_y,\quad k\mapsto -i\sigma_z$",
+        r"$\mathbb{H}\to\mathfrak{su}(2)$ (iso):",
+        r"$1\mapsto I,\ i\mapsto -i\sigma_x$",
+        r"$j\mapsto -i\sigma_y$",
+        r"$k\mapsto -i\sigma_z$",
         "",
-        f"homomorphism error:   {res['quaternion->Pauli homomorphism (err)']:.1e}",
-        f"unit q is SU(2):       {res['unit quaternion is unitary (err)']:.1e}",
-        f"Dirac Clifford error:  {res['Dirac Clifford relation (err)']:.1e}",
+        f"homom err   {res['quaternion->Pauli homomorphism (err)']:.0e}",
+        f"SU(2) err   {res['unit quaternion is unitary (err)']:.0e}",
+        f"Clifford err {res['Dirac Clifford relation (err)']:.0e}",
     ]
-    ax.text(0.02, 0.95, "\n".join(lines), va="top", ha="left", fontsize=11,
-            family="monospace" if False else None)
+    ax.text(0.0, 0.97, "\n".join(lines), va="top", ha="left", fontsize=8.6)
 
     fig.suptitle("Thread 2 -- the Cayley table is the atomic cell of the Dirac algebra",
                  y=1.0, fontsize=13)
