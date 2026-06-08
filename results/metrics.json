@@ -1,0 +1,107 @@
+{
+  "n_samples": 20000,
+  "seed": 0,
+  "laws": {
+    "associativity": {
+      "hamilton/complex": {
+        "max": 5.4025784115714076e-15,
+        "mean": 2.2082189265998031e-16,
+        "median": 1.1102230246251565e-16
+      },
+      "hamilton/quaternion": {
+        "max": 1.4438022517112667e-14,
+        "mean": 1.0812594612176283e-15,
+        "median": 8.881784197001252e-16
+      },
+      "phase_add/complex": {
+        "max": 9.085805852212303e-13,
+        "mean": 1.2719679508378155e-15,
+        "median": 3.3306690738754696e-16
+      },
+      "phase_add/quaternion": {
+        "max": 54.443672036453876,
+        "mean": 1.1605394381565544,
+        "median": 2.8286867103357877e-15
+      }
+    },
+    "distributivity": {
+      "hamilton/complex": {
+        "max": 3.580361673049448e-15,
+        "mean": 2.1391078403051072e-16,
+        "median": 1.1188630228279524e-16
+      },
+      "hamilton/quaternion": {
+        "max": 5.338314359524835e-15,
+        "mean": 6.571256849853702e-16,
+        "median": 5.20740757162067e-16
+      },
+      "phase_add/complex": {
+        "max": 3.45501238620264e-11,
+        "mean": 3.76372846909991e-15,
+        "median": 4.965068306494546e-16
+      },
+      "phase_add/quaternion": {
+        "max": 23.147707611961714,
+        "mean": 1.7821986820628666,
+        "median": 1.2956728593908542
+      }
+    },
+    "commutativity": {
+      "hamilton/complex": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0
+      },
+      "hamilton/quaternion": {
+        "max": 30.187812500990905,
+        "mean": 3.99432793422173,
+        "median": 3.3349488206154065
+      },
+      "phase_add/complex": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0
+      },
+      "phase_add/quaternion": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0
+      }
+    }
+  },
+  "non_contradiction": {
+    "fundamental_relations_max_err": 0.0,
+    "euler_landmarks_max_err": 1.8369701987210297e-16,
+    "conj_energy_max_err": 0.0,
+    "conj_phase_max_err": 0.0,
+    "qqstar_imaginary_residue_max": 1.2560739669470201e-15,
+    "qqstar_real_eq_norm2_max_err": 7.105427357601002e-15,
+    "exp_log_roundtrip_max_err": 1.326694920936101e-15,
+    "fundamentals": {
+      "i^2": [
+        -1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "j^2": [
+        -1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "k^2": [
+        -1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ijk": [
+        -1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  }
+}
