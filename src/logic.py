@@ -538,6 +538,141 @@ def verify_datastructure(lat: GateLattice) -> dict:
     return {"checks": checks, "violations": violations, "trace": trace, "lattice": lat}
 
 
+# =============================================================================
+#  The consistency cursor: a degree of consistency that slides a partial logic
+#  between its subset bound (the sublogic) and superset bound (the superlogic).
+#  A cursor is a unit direction c; the consistency of a landmark z is Re(c z̄)
+#  = cos of the angle between them: +1 alignment, 0 exclusion, -1 contradiction.
+#  Thresholding that consistency at a level tau picks out the landmarks that are
+#  "consistent enough" -- and sweeping tau from +1 down to -1 grows that set
+#  monotonically from a tight sublogic up to the full superlogic.
+# =============================================================================
+NAME_LM = {"1": 1 + 0j, "i": 0 + 1j, "-1": -1 + 0j, "-i": 0 - 1j}
+
+
+def consistency(name: str, cursor: complex) -> float:
+    """Degree of consistency of a landmark with a unit cursor:  Re(c·z̄) = cosΔθ.
+    +1 = alignment, 0 = exclusion, -1 = contradiction."""
+    return float((cursor * np.conj(NAME_LM[name])).real)
+
+
+def relation(name: str, cursor: complex, tol: float = 1e-9) -> str:
+    r = cursor * np.conj(NAME_LM[name])
+    if abs(r.imag) < tol and r.real > tol:  return "alignment"
+    if abs(r.imag) < tol and r.real < -tol: return "contradiction"
+    if abs(r.real) < tol:                   return "exclusion"
+    return "mixed"
+
+
+def level_set(cursor: complex, tau: float) -> frozenset:
+    """The landmarks at least `tau`-consistent with the cursor -- the sublogic at
+    that degree of consistency."""
+    return frozenset(n for n in NAME_LM if consistency(n, cursor) >= tau - 1e-9)
+
+
+def consistency_chain(cursor: complex):
+    """The distinct level-sets as tau falls 1 -> -1: a nested chain from the tight
+    sublogic (subset) up to the full superlogic (superset)."""
+    chain = []
+    for tau in np.linspace(1.0, -1.0, 401):
+        L = level_set(cursor, tau)
+        if not chain or L != chain[-1]:
+            chain.append(L)
+    return chain
+
+
+def _relation_multiset(values: dict):
+    """Counter of pairwise relations among a labelled set of unit landmarks."""
+    from collections import Counter
+    out = Counter()
+    for a in values:
+        for b in values:
+            if a == b:
+                continue
+            r = values[a] * np.conj(values[b])
+            if abs(r.imag) < 1e-9 and r.real > 0:   out["alignment"] += 1
+            elif abs(r.imag) < 1e-9 and r.real < 0: out["contradiction"] += 1
+            elif abs(r.real) < 1e-9:                out["exclusion"] += 1
+    return out
+
+
+def verify_cursor() -> dict:
+    """The cursor ties the relational measure to the subset/superset lattice."""
+    # 1. a cursor (one direction + one threshold = ONE half-plane) realises EXACTLY
+    #    the linearly separable gates of 11.5; the parity gates are unreachable.
+    realised = set()
+    for deg in range(0, 360):
+        c = np.exp(1j * np.deg2rad(deg))
+        for tau in np.linspace(-1, 1, 401):
+            realised.add(level_set(c, tau))
+    sep = {name: linearly_separable(GATES[name]) for name in GATES}
+    thresholdable = {name: (gate_trueset(name) in realised) for name in GATES}
+    match = all(thresholdable[n] == sep[n] for n in GATES)
+
+    # 2. every sweep is a monotone chain ending at the full superlogic
+    chains_ok = True
+    for deg in range(0, 360, 5):
+        ch = consistency_chain(np.exp(1j * np.deg2rad(deg)))
+        nested = all(ch[i] < ch[i + 1] for i in range(len(ch) - 1))
+        chains_ok = chains_ok and nested and ch[-1] == ALL_LM
+
+    # 3. rotation covariance: rotating the cursor by any angle preserves the
+    #    multiset of pairwise relations (the dynamics hold; only labels move)
+    base = _relation_multiset(NAME_LM)
+    rotation_inv = all(
+        _relation_multiset({k: np.exp(1j * np.deg2rad(phi)) * v for k, v in NAME_LM.items()})
+        == base for phi in (13, 57, 90, 123, 180))
+
+    # 4. both layouts (paper's minterm map, and the contrast map A=-1,B=+1,AB=i,!A!B=-i)
+    #    carry the same relational structure -- the logic labelling is a free choice
+    paper = {"AB": 1 + 0j, "A!B": 1j, "!AB": -1j, "!A!B": -1 + 0j}
+    user = {"B": 1 + 0j, "AB": 1j, "A": -1 + 0j, "!A!B": -1j}
+    layouts_match = (_relation_multiset(paper) == _relation_multiset(user) == base)
+
+    checks = {
+        "cursor level-sets == separable gates": match,
+        "every sweep is a chain ending at superlogic": chains_ok,
+        "rotation preserves the relation multiset": rotation_inv,
+        "both layouts share the relation structure": layouts_match,
+    }
+    return {"checks": checks, "violations": sum(1 for v in checks.values() if not v),
+            "thresholdable": thresholdable, "separable": sep}
+
+
+# --- the relational quaternion: align/contradict (scalar) + exclusion axis (vector)
+def relational_quaternion(p, q):
+    """R = p·q̄.  Scalar part = alignment(+)/contradiction(-); vector part = the
+    *exclusion axis* -- which only fans out into a 2-sphere of directions in H."""
+    return F.hamilton(p, F.conjugate(q))
+
+
+def _qclass(r, tol=1e-9):
+    s, v = r[0], r[1:]
+    nv = float(np.linalg.norm(v))
+    if nv < tol and s > 0: return "alignment"
+    if nv < tol and s < 0: return "contradiction"
+    if abs(s) < tol:       return "exclusion"
+    return "mixed"
+
+
+def verify_relational_quaternion() -> dict:
+    one, I, J, K = F.ONE, F.I, F.J, F.K
+    axes = {n: relational_quaternion(u, one)[1:] for n, u in (("i", I), ("j", J), ("k", K))}
+    distinct = (np.linalg.norm(axes["i"] - axes["j"]) > 0.5 and
+                np.linalg.norm(axes["j"] - axes["k"]) > 0.5)
+    sqrt_minus1 = all(np.allclose(F.hamilton(relational_quaternion(u, one),
+                                             relational_quaternion(u, one)), -one)
+                      for u in (I, J, K))
+    checks = {
+        "alignment   R(1,1)  = +1": _qclass(relational_quaternion(one, one)) == "alignment",
+        "contradict  R(1,-1) = -1": _qclass(relational_quaternion(one, -one)) == "contradiction",
+        "exclusion   R(i,1) imaginary": _qclass(relational_quaternion(I, one)) == "exclusion",
+        "exclusion is directional (i,j,k distinct)": distinct,
+        "pure exclusion squares to -1 (a √-1)": sqrt_minus1,
+    }
+    return {"checks": checks, "violations": sum(1 for v in checks.values() if not v)}
+
+
 # --- shared lattice geometry (positions / covering edges) ---------------------
 _POS = {
     "FALSE": (0.0, 0.0),
@@ -662,6 +797,105 @@ def make_partial_figure(res_d: dict):
     print(f"  wrote {os.path.relpath(path)}")
 
 
+def make_cursor_figure():
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+    relcol = {"alignment": "#2ca02c", "exclusion": "#7f7f7f",
+              "contradiction": "#d62728", "mixed": "#1f77b4"}
+    th = np.linspace(0, 2 * np.pi, 400)
+    fig = plt.figure(figsize=(13.8, 11.4))
+
+    # (A) the consistency field of a cursor sitting on +1 ----------------------
+    axA = fig.add_subplot(2, 2, 1)
+    axA.plot(np.cos(th), np.sin(th), color="0.82", lw=1.2)
+    c = 1 + 0j
+    axA.annotate("", xy=(c.real, c.imag), xytext=(0, 0),
+                 arrowprops=dict(arrowstyle="-|>", color="black", lw=2.4))
+    axA.text(0.5, -0.2, "cursor $c$", ha="center", fontsize=9)
+    for n, z in NAME_LM.items():
+        rel, val = relation(n, c), consistency(n, c)
+        axA.plot([z.real], [z.imag], "o", ms=13, color=relcol[rel], zorder=5)
+        axA.annotate(f"{n}: {val:+.0f}\n{rel}", (z.real, z.imag),
+                     textcoords="offset points", xytext=(20 * z.real, 22 * z.imag),
+                     ha="center", fontsize=8.3, color=relcol[rel])
+    axA.set_aspect("equal"); axA.axis("off"); axA.set_xlim(-1.9, 1.9); axA.set_ylim(-1.7, 1.7)
+    axA.set_title("(A) consistency $=\\mathrm{Re}(c\\,\\bar z)=\\cos\\Delta\\theta$\n"
+                  "+1 align (green) · 0 exclude (grey) · −1 contradict (red)", fontsize=10.5)
+
+    # (B) sweeping the degree of consistency: sublogic -> superlogic -----------
+    axB = fig.add_subplot(2, 2, 2)
+    order = ["1", "i", "-i", "-1"]
+    vals = {n: consistency(n, c) for n in order}
+    for n in order:
+        axB.plot([0, 1], [vals[n], vals[n]], color=relcol[relation(n, c)], lw=2)
+        axB.text(1.03, vals[n], f"{n}", va="center", fontsize=9,
+                 color=relcol[relation(n, c)])
+    bands = [(0.0, 1.0, "AND $=\\{1\\}$", "sublogic (subset)"),
+             (-1.0, 0.0, "OR $=\\{1,i,-i\\}$", ""),
+             (-1.05, -1.0, "⊤ $=\\{1,i,-1,-i\\}$", "superlogic (superset)")]
+    for lo, hi, lab, tag in bands[:2]:
+        axB.axhspan(lo, hi, xmin=0.0, xmax=0.32, color="0.9", zorder=0)
+    axB.annotate("", xy=(0.16, -1.05), xytext=(0.16, 1.05),
+                 arrowprops=dict(arrowstyle="-|>", color="0.4", lw=1.6))
+    axB.text(0.46, 0.5, "$\\tau\\in(0,1]$ →\nAND  (sublogic)", fontsize=8.5, va="center")
+    axB.text(0.46, -0.5, "$\\tau\\in(-1,0]$ →\nOR", fontsize=8.5, va="center")
+    axB.text(0.46, -1.0, "$\\tau=-1$ → ⊤ (superlogic)", fontsize=8.5, va="center")
+    axB.text(0.02, 1.16, "lower the threshold $\\tau$  =  open sublogic → superlogic",
+             fontsize=9, color="0.3")
+    axB.set_xlim(-0.05, 1.35); axB.set_ylim(-1.25, 1.28)
+    axB.set_xticks([]); axB.set_ylabel("degree of consistency  $\\tau$")
+    axB.set_title("(B) cursor at +1 sweeps the chain  AND ⊂ OR ⊂ ⊤", fontsize=10.5)
+
+    # (C) rotation covariance: rotate the cursor, same dynamics, relabelled -----
+    axC = fig.add_subplot(2, 2, 3)
+    axC.plot(np.cos(th), np.sin(th), color="0.85", lw=1.0)
+    for col, deg in [("#1f77b4", 0), ("#9467bd", 180)]:
+        cc = np.exp(1j * np.deg2rad(deg))
+        axC.annotate("", xy=(cc.real, cc.imag), xytext=(0, 0),
+                     arrowprops=dict(arrowstyle="-|>", color=col, lw=2.4))
+        ch = consistency_chain(cc)
+        named = []
+        for L in ch:
+            hit = [g for g in ("AND", "NOR", "OR", "NAND") if gate_trueset(g) == L]
+            named.append(hit[0] if hit else ("⊤" if L == ALL_LM else "·"))
+        axC.text(cc.real * 1.45, -0.22 if deg == 0 else 0.22, "  →  ".join(named),
+                 ha="center", va="center", fontsize=8.6, color=col)
+    axC.text(0.0, -1.72, "rotate 90° instead and the cursor lands on the single\n"
+             "propositions A, B (the non-symmetric gates)", ha="center",
+             fontsize=8.0, color="0.45")
+    for n, z in NAME_LM.items():
+        axC.plot([z.real], [z.imag], "o", ms=8, color="0.6", zorder=5)
+        axC.annotate(n, (z.real, z.imag), textcoords="offset points",
+                     xytext=(11 * z.real, 11 * z.imag), ha="center", fontsize=8, color="0.5")
+    axC.set_aspect("equal"); axC.axis("off"); axC.set_xlim(-2.0, 2.0); axC.set_ylim(-1.9, 1.9)
+    axC.set_title("(C) rotate the cursor → same chain, relabelled\n"
+                  "(gauge covariance: the dynamics hold under rotation)", fontsize=10.5)
+
+    # (D) the quaternion level: exclusion gains a direction (a 2-sphere) --------
+    axD = fig.add_subplot(2, 2, 4, projection="3d")
+    u, v = np.mgrid[0:2 * np.pi:40j, 0:np.pi:20j]
+    axD.plot_surface(np.cos(u) * np.sin(v), np.sin(u) * np.sin(v), np.cos(v),
+                     color="0.85", alpha=0.25, linewidth=0)
+    for vec, lab in [((1, 0, 0), "i"), ((0, 1, 0), "j"), ((0, 0, 1), "k")]:
+        axD.quiver(0, 0, 0, *vec, color="#7f7f7f", lw=2)
+        axD.text(vec[0] * 1.25, vec[1] * 1.25, vec[2] * 1.25, lab,
+                 fontsize=11, color="#3f3f3f")
+    axD.text(0, 0, 1.7, "exclusion = the imaginary 2-sphere\n(every direction a √−1)",
+             ha="center", fontsize=8.6, color="#3f3f3f")
+    axD.scatter([0], [0], [0], color="black", s=20)
+    axD.text(0.1, 0.1, -1.8, "align/contradict = ±1 (scalar axis,\noff this sphere)",
+             ha="center", fontsize=8.4, color="0.3")
+    axD.set_box_aspect((1, 1, 1)); axD.set_axis_off()
+    axD.set_title("(D) in ℍ: exclusion is directional", fontsize=10.5)
+
+    fig.suptitle("The consistency cursor — degrees of consistency between sublogic and superlogic\n"
+                 "alignment / exclusion / contradiction = $\\mathrm{Re}(c\\bar z)=+1/0/-1$",
+                 y=1.01, fontsize=13)
+    path = os.path.join(FIG_DIR, "fig22_cursor.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
+
+
 def make_figure(res_h: dict):
     fig = plt.figure(figsize=(13.5, 4.6))
     gs = fig.add_gridspec(1, 3, width_ratios=[1.15, 1, 1])
@@ -765,12 +999,21 @@ def main():
     print("  worked example (interval narrows superset -> subset):")
     for p in res_d["trace"]:
         print(f"    {p}")
+    res_c = verify_cursor()
+    print(f"  consistency cursor: {res_c['violations']} violations")
+    for k, v in res_c["checks"].items():
+        print(f"    {k:<46} {v}")
+    res_rq = verify_relational_quaternion()
+    print(f"  relational quaternion: {res_rq['violations']} violations")
+    for k, v in res_rq["checks"].items():
+        print(f"    {k:<46} {v}")
     make_figure(res_h)
     make_rotation_figure()
     make_gate_figure(res_g)
     make_superset_figure(lat)
     make_subset_figure(lat)
     make_partial_figure(res_d)
+    make_cursor_figure()
 
 
 if __name__ == "__main__":

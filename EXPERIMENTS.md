@@ -8,7 +8,7 @@ python src/spinor.py     # Thread 1 -> figures/fig9_spinor.png
 python src/dirac.py      # Thread 2 -> figures/fig10_dirac.png
 python src/qnn.py        # Thread 3 -> figures/fig11..fig14
 python src/ledger.py     # Thread 4 -> figures/fig15_ledger.png
-python src/logic.py      # Thread 5 -> figures/fig16..fig21 (logic, rotation, gates, lattice maps)
+python src/logic.py      # Thread 5 -> figures/fig16..fig22 (logic, rotation, gates, lattice maps, cursor)
 ```
 
 ---
@@ -250,6 +250,27 @@ subset:
 | A¬B, ¬AB false | `{1}` | `{−1,i,−i}` | AND `{1}` | AND `{1}` | AND |
 
 ![partial logic](figures/fig21_partial.png)
+
+**Consistency cursor — alignment / exclusion / contradiction (0 violations).** A cursor is
+a unit direction `c`; the consistency of a landmark is `κ(z|c) = Re(c·z̄) = cosΔθ`, with
+`+1` alignment, `0` exclusion, `−1` contradiction. Thresholding at `τ` and lowering it
+sweeps a monotone chain from the tight **sublogic** (AND) up to the full **superlogic**
+(⊤): `AND ⊂ OR ⊂ ⊤` (cursor on `+1`), `NOR ⊂ NAND ⊂ ⊤` (rotated to `−1`). Exact findings:
+
+| check | result |
+|---|---|
+| cursor level-sets (one half-plane) == linearly-separable gates | True (all 6) |
+| every τ-sweep is a nested chain ending at ⊤ | True |
+| rotating the cursor preserves the pairwise-relation multiset | True |
+| both layouts (minterm map; contrast map A=−1,B=+1,AB=i,¬A¬B=−i) share it | True |
+| relational quaternion `R=p·q̄`: R(1,1)=+1, R(1,−1)=−1, R(i,1) imaginary | True |
+| exclusion is directional (i,j,k distinct axes); pure exclusion `R²=−1` | True |
+
+So the cursor-thresholdable gates are *exactly* the separable ones (parity needs two
+cursors), rotation is a free gauge, and at the quaternion level exclusion gains a
+direction — the exclusion relations *are* the unit imaginaries (√−1).
+
+![consistency cursor](figures/fig22_cursor.png)
 
 ---
 

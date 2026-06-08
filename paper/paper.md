@@ -34,8 +34,11 @@ the data genuinely carries multiplicative quaternion structure. Finally we expos
 two Boolean variables (agreement $=$ real, disagreement $=$ imaginary), conjugation is
 the swap $A\leftrightarrow B$ and negation the joint complement, and multiplication is
 bitwise XOR of the basis indices dressed with a Boolean sign — the choice of "real"
-axis being a free $U(1)$ rotation. *Quaternions are all you need — for the algebra; for
-learning, only when the structure is; and underneath, it is all Boolean logic on the
+axis being a free $U(1)$ rotation. A *consistency cursor* then measures the three
+relations a partial logic can carry — alignment, exclusion, contradiction — as
+$\operatorname{Re}(c\bar z)=+1/0/-1$, with exclusion becoming *directional* (a 2-sphere of
+imaginary units) at the quaternion level. *Quaternions are all you need — for the algebra;
+for learning, only when the structure is; and underneath, it is all Boolean logic on the
 circle.*
 
 ---
@@ -830,6 +833,77 @@ just a point in between, pinned by a subset bound below and a superset bound abo
 Conjugation, negation, and rotation move between equivalent framings of the same four
 states.
 
+### 11.6 The consistency cursor: alignment, exclusion, contradiction
+
+What slides a partial logic *between* its subset and superset bounds is a **degree of
+consistency**, and the natural object that measures it is already in the framework. Give
+each landmark a unit phase and define, for a chosen unit direction (a **cursor**) $c$,
+the consistency of a landmark $z$ as
+
+$$ \kappa(z\mid c) \;=\; \operatorname{Re}(c\,\bar z) \;=\; \cos\Delta\theta \;\in[-1,1]. $$
+
+This single number carries the three relations one can have with the cursor (all exact,
+`src/logic.py`, 0 violations):
+
+| value | relation | geometry |
+|---|---|---|
+| $\kappa=+1$ | **alignment** | same direction ($z=c$) |
+| $\kappa=0$ | **exclusion** | orthogonal ($z\perp c$) |
+| $\kappa=-1$ | **contradiction** | antipodal ($z=-c$) |
+
+It is exactly the governing involution read as a measure: contradiction is
+$\sigma(z)=-\sigma(c)$ (the antipode the whole paper is built on), alignment is identity,
+exclusion is the orthogonal phase. And it **refines** the binary split of §11.1: the real
+(agreement) axis splits *by sign* into alignment $(+1)$ vs contradiction $(-1)$; the
+imaginary (disagreement) axis *is* exclusion.
+
+**The cursor is the slider between sublogic and superlogic.** Threshold the consistency
+at a level $\tau$ and keep the landmarks that are at least $\tau$-consistent,
+$L(c,\tau)=\{z:\kappa(z\mid c)\ge\tau\}$. As $\tau$ falls from $+1$ to $-1$ this set grows
+*monotonically* from the tightest **sublogic** (only the aligned landmark) up to the full
+**superlogic** $\top$ — a maximal chain in the lattice of §11.5. With the cursor on $+1$
+the chain is $\mathrm{AND}\subset\mathrm{OR}\subset\top$; rotate the cursor to $-1$ and it
+becomes the complement chain $\mathrm{NOR}\subset\mathrm{NAND}\subset\top$. So the degree
+of consistency $\tau$ is literally the cursor that "closes" a partial logic down to a
+sublogic ($\tau\to+1$) or opens it up to a superlogic ($\tau\to-1$).
+
+This also explains §11.5's separability result exactly. A cursor is *one direction plus
+one threshold* — a single half-plane — so the gates it can cut out are precisely the
+**linearly separable** ones: AND, OR, NAND, NOR are cursor level-sets; **XNOR and XOR are
+not** (verified: thresholdable $=$ separable on all six gates). Parity is unreachable by a
+single consistency sweep because it needs two cursors — an axis *and* its orthogonal.
+
+**Rotation covariance, and the freedom of labelling.** Nothing privileges where "agree-
+ment" sits: rotate the cursor (or, equivalently, rotate the landmark values) and the whole
+consistency field turns rigidly — the chain keeps its shape and only its *labels* move
+(verified: rotation preserves the multiset of pairwise relations). The two natural
+labellings — the paper's minterm map and the contrast map $A\!=\!-1,B\!=\!+1,AB\!=\!i,
+\lnot A\lnot B\!=\!-i$ — carry the *same* relational structure; which states one calls
+"agreement," "synthesis," or "exclusion" is a free choice of frame, the $U(1)$ gauge of
+§11.4. (In the contrast map, for instance, $A$ and $B$ are antipodal, so $R(A,B)=-1$:
+they read as a *contradiction*, while a single proposition and a joint state read as
+*exclusion*, $R(A,AB)=\pm i$.)
+
+![the consistency cursor](../figures/fig22_cursor.png)
+
+*Figure 22. (A) A cursor at $+1$: each landmark's consistency $\operatorname{Re}(c\bar z)$
+is $+1/0/0/-1$ — alignment, exclusion, exclusion, contradiction. (B) Lowering the
+threshold $\tau$ grows the level-set from the sublogic AND up to the superlogic $\top$.
+(C) Rotating the cursor gives the same chain, relabelled (gauge covariance). (D) At the
+quaternion level exclusion becomes directional.*
+
+**At the quaternion level.** The cursor measure lifts verbatim: the **relational
+quaternion** $R(p,q)=p\,\bar q$ has scalar part $=$ alignment$(+)$/contradiction$(-)$ and
+*vector* part $=$ the **exclusion axis**. In $\mathbb{C}$ there are only two ways to be
+orthogonal $(\pm i)$; in $\mathbb{H}$ exclusion fans out into a whole **2-sphere of
+directions** — two propositions can exclude each other "along $i$" versus "along $j$,"
+with $R(i,j)=-k$ (the exclusion direction is the third, cross-product axis). And the
+punchline that closes the paper's loop: every pure exclusion satisfies $R^2=-1$ — the
+exclusion relations *are* the unit imaginaries. Alignment and contradiction are real
+$(\pm1)$; **exclusion is imaginary, and its three dimensions are exactly the $i,j,k$ the
+whole construction is about.** The "realised imaginaries" are the exclusion-relations
+between propositions.
+
 ## 12. Synthesis
 
 Two claims, at two confidence levels. The **algebraic** claim is settled: among
@@ -887,7 +961,7 @@ python src/spinor.py           # Section 7  -> fig9
 python src/dirac.py            # Section 8  -> fig10
 python src/qnn.py              # Section 9  -> fig11..fig14; results/learning.json
 python src/ledger.py           # Section 10 -> fig15
-python src/logic.py            # Section 11 -> fig16..fig21
+python src/logic.py            # Section 11 -> fig16..fig22
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,
@@ -900,8 +974,11 @@ python src/logic.py            # Section 11 -> fig16..fig21
   layers (proven equivalent), apples-to-apples, sample-efficiency, and compute
   benchmarks.
 * `src/ledger.py` — Section 10, the $2\pi/4\pi$ geometric roots and ledger figure.
-* `src/logic.py` — Section 11, the Boolean minterm / XOR substrate and rotated
-  conjugation (all identities verified to machine precision).
+* `src/logic.py` — Section 11, the Boolean minterm / XOR substrate, rotated conjugation,
+  the gate lattice with its superset/subset maps and the `PartialLogic` data structure,
+  and the consistency cursor with the relational quaternion (all identities verified to
+  machine precision; the lattice, data-structure, cursor and relational-quaternion checks
+  each report 0 violations).
 * `results/metrics.json`, `results/learning.json` — machine-readable records.
 
 ## Appendix B. Notation
