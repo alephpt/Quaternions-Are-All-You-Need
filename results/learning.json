@@ -55,23 +55,23 @@
   },
   "benchmark_ms": {
     "real (h=64)": {
-      "step_ms": 0.2117487550003716,
-      "eval_ms": 3.5089287700020577
+      "step_ms": 0.26331892499996457,
+      "eval_ms": 4.752885185000082
     },
     "quaternion-fast (BLAS)": {
-      "step_ms": 0.42719170000054874,
-      "eval_ms": 3.6603902899992136
+      "step_ms": 0.5680777099999545,
+      "eval_ms": 4.682160604999979
     },
     "quaternion-einsum": {
-      "step_ms": 10.473390095000923,
-      "eval_ms": 92.04433664000135
+      "step_ms": 18.57110277000004,
+      "eval_ms": 179.78186623500022
     }
   },
   "apples_to_apples": {
     "quaternion (H=16, 64-dim)": {
       "params": 1348,
       "final_test_mse": 0.01698390414250568,
-      "train_time_s": 4.612865656999929,
+      "train_time_s": 7.620281493999983,
       "steps_to_threshold": {
         "0.1": 2175,
         "0.05": 3100,
@@ -81,7 +81,7 @@
     "real param-matched (h=31)": {
       "params": 1399,
       "final_test_mse": 0.0038134293015345895,
-      "train_time_s": 2.136381567999706,
+      "train_time_s": 5.032415103000005,
       "steps_to_threshold": {
         "0.1": 300,
         "0.05": 425,
@@ -91,7 +91,7 @@
     "real capacity-matched (h=64)": {
       "params": 4996,
       "final_test_mse": 0.0015103824335019418,
-      "train_time_s": 3.510740073999841,
+      "train_time_s": 4.46733876899998,
       "steps_to_threshold": {
         "0.1": 175,
         "0.05": 250,

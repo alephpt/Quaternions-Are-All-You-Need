@@ -1066,9 +1066,11 @@ python src/logic.py            # Section 11 -> fig16..fig23
 * `src/ledger.py` — Section 10, the $2\pi/4\pi$ geometric roots and ledger figure.
 * `src/logic.py` — Section 11, the Boolean minterm / XOR substrate, rotated conjugation,
   the gate lattice with its superset/subset maps and the `PartialLogic` data structure,
-  and the consistency cursor with the relational quaternion (all identities verified to
-  machine precision; the lattice, data-structure, cursor and relational-quaternion checks
-  each report 0 violations).
+  and the consistency cursor with the relational quaternion. All identities are verified to
+  machine precision (the lattice, data-structure, cursor and relational-quaternion checks
+  each report 0 violations); Theorems 11.1–11.3 are confirmed by `verify_relational_proofs`
+  (decomposition to $6\times10^{-14}$ over $2\times10^{4}$ random quaternions) and
+  `verify_correlation_trichotomy` (the exact logical reading, 0 violations).
 * `results/metrics.json`, `results/learning.json` — machine-readable records.
 
 ## Appendix B. Notation
