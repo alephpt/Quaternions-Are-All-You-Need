@@ -293,15 +293,21 @@ The cursor and the partial-logic lattice are the *same* object: `PartialLogic.fr
 
 ![three propositions](figures/fig23_three_prop.png)
 
-**Truthiness — a mass on each minterm (0 violations, max err 5e-16 over 2×10⁵ random
-distributions).** Two fuzzy propositions (e.g. P(A)=0.7, P(B)=0.4) make the four minterms a
-2×2 contingency table. *Phasor embedding* (energy=mass): the mass-weighted resultant is
-`z = (P(A)+P(B)−1) + i(P(A)−P(B))`, depending only on the marginals. The governing
-involution holds iff `Im z = 0` (conjugation, P(A)=P(B)); negation iff `Re z = 0`
-(P(A)+P(B)=1); both iff `z=0` iff P(A)=P(B)=½ — the crisp circle. The dependence the phasor
-drops is `Cov(A,B) = p₁₁p₀₀ − p₁₀p₀₁`. *Born embedding* (energy=√mass): `|ψ⟩=Σ√pₖ|k⟩` is a
-2-qubit state whose amplitude matrix is rank-1 (a product state) iff `det M = 0` iff
-`Cov=0` iff independence — i.e. **statistical dependence = entanglement**.
+**Truthiness — a mass on each minterm (max err 1e-16 over 2×10⁵ random distributions).**
+Two fuzzy propositions (P(A)=0.7, P(B)=0.4) make the four minterms a 2×2 contingency table.
+The cells are determined **formulaically**: `table = [P(A),P(¬A)] ⊗ [P(B),P(¬B)] + γ·[[+1,−1],[−1,+1]]`, the outer product plus a coupling `γ=Cov`. The coupling matrix is the
+XNOR−XOR pattern, so γ>0 routes mass to the agreement (real) axis, γ<0 to disagreement
+(imaginary). *Phasor* (energy=mass): resultant `z = (P(A)+P(B)−1) + i(P(A)−P(B))`, marginals
+only. **The governing involution is computed with the framework's own e/σ/conjugate, not
+asserted** (`verify_truthiness_involution`): conjugation fixes the agreement landmarks ±1
+(where σ=0 — the realised axis) and swaps the disagreement landmarks ±i, σ(m*)=−σ(m) exactly
+(err 0), so the conjugate-pair energy residual e(m₊ᵢ)−e(m₋ᵢ) = P(A)−P(B); the involution
+holds iff P(A)=P(B) iff Im z=0. *Born* (energy=√mass): `|ψ⟩=Σ√pₖ|k⟩` is a 2-qubit state,
+rank-1 (product) iff det M=0 iff Cov=0 iff independence — **dependence = entanglement**.
+
+Meaningful examples with cells **computed, not guessed** (objective predicates over 1..2520):
+even vs multiple-of-3 → exactly independent (Cov=0, product state); even vs prime → Cov=−0.073
+(only 2 is both, mass on the disagreement axis); multiple-of-6 vs multiple-of-4 → Cov=+0.042.
 
 ![truthiness](figures/fig24_truthiness.png)
 

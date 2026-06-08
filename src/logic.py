@@ -895,6 +895,95 @@ def verify_truthiness(n: int = 200000, seed: int = 0) -> dict:
     return {"errors": errs, "max_error": max(errs.values()), "n": n}
 
 
+# --- the governing involution e(x)=e(y):sigma(x)=-sigma(y), computed with the
+#     framework's OWN functionals on the four minterm-objects (not asserted) ----
+_TRUTH_UNITS = [F.ONE, F.I, -F.I, -F.ONE]          # AB, A!B, !AB, !A!B  (complex i-plane)
+_TRUTH_NAMES = ["AB", "A!B", "!AB", "!A!B"]
+
+
+def truth_landmark_objects(p, born: bool = False):
+    """The four minterms as genuine framework objects: energy = mass (or sqrt-mass
+    in the Born reading), phase = the landmark direction."""
+    amp = np.sqrt(p) if born else np.asarray(p, float)
+    return [a * u for a, u in zip(amp, _TRUTH_UNITS)]
+
+
+def truth_cells_coupled(pA: float, pB: float, gamma: float) -> np.ndarray:
+    """Formulaic determination of the 4 minterms from the two True:False splits:
+    the OUTER product of [P(A),P(!A)] and [P(B),P(!B)], plus the coupling term
+    gamma*[[+1,-1],[-1,+1]].  gamma = Cov(A,B) is the only dependence DOF; gamma>0
+    routes mass to the agreement (real) axis, gamma<0 to the disagreement (imag.)."""
+    qA, qB = 1 - pA, 1 - pB
+    return np.array([pA * pB + gamma, pA * qB - gamma, qA * pB - gamma, qA * qB + gamma])
+
+
+def verify_truthiness_involution(n: int = 100000, seed: int = 0) -> dict:
+    """THEOREM (the governing involution under truthiness), evaluated with the
+    framework's e(), sigma(), conjugate() -- NOT a hand substitution.
+      * conjugation sends each minterm-object to another landmark: it FIXES the
+        agreement axis (+-1, where sigma=0 -- the realised/real axis) and SWAPS the
+        disagreement axis (+-i).  For all four, sigma(conj m) = -sigma(m).
+      * the governing involution e(x)=e(y) for the conjugate pair (sigma(x)=-sigma(y))
+        therefore reduces, via e(), to the single energy balance on the +-i pair, whose
+        residual is e(m_{+i}) - e(m_{-i}).  In the mass reading this equals exactly
+        P(A)-P(B); so the involution holds  <=>  P(A)=P(B)  (= Im z = 0).
+    Verified over random distributions with the framework functions."""
+    cmap = [next(k for k, v in enumerate(_TRUTH_UNITS) if np.allclose(v, F.conjugate(u)))
+            for u in _TRUTH_UNITS]                       # AB->AB, A!B->!AB, !AB->A!B, !A!B->!A!B
+    rng = np.random.default_rng(seed)
+    e_sig = e_mass = e_born = 0.0
+    for _ in range(n):
+        p = rng.dirichlet([1, 1, 1, 1]); PA, PB = p[0] + p[1], p[0] + p[2]
+        for born in (False, True):
+            objs = truth_landmark_objects(p, born)
+            for m in objs:                               # framework identity sigma(m*)=-sigma(m)
+                e_sig = max(e_sig, float(np.linalg.norm(F.sigma(F.conjugate(m)) + F.sigma(m))))
+            resid = max(abs(F.e(F.conjugate(objs[k])) - F.e(objs[cmap[k]])) for k in range(4))
+            if born:
+                e_born = max(e_born, abs(resid - abs(np.sqrt(p[1]) - np.sqrt(p[2]))))
+            else:
+                e_mass = max(e_mass, abs(resid - abs(PA - PB)))
+    checks = {
+        "sigma(conj m) = -sigma(m) for every minterm (framework)": e_sig,
+        "involution residual (mass) = |P(A)-P(B)|": e_mass,
+        "involution residual (Born) = |sqrt p10 - sqrt p01|": e_born,
+    }
+    return {"errors": checks, "max_error": max(checks.values()), "n": n}
+
+
+# --- meaningful examples: the four cells COMPUTED from data, not guessed --------
+def contingency(A, B) -> np.ndarray:
+    """The four minterm masses [AB, A!B, !AB, !A!B] from two boolean arrays over a
+    shared universe of instances."""
+    A = np.asarray(A, bool); B = np.asarray(B, bool); m = len(A)
+    return np.array([np.sum(A & B), np.sum(A & ~B), np.sum(~A & B), np.sum(~A & ~B)]) / m
+
+
+def _primes_upto(N: int) -> np.ndarray:
+    s = np.ones(N + 1, bool); s[:2] = False
+    for i in range(2, int(N ** 0.5) + 1):
+        if s[i]:
+            s[i * i::i] = False
+    return s
+
+
+def truthiness_examples() -> dict:
+    """Worked examples where A,B are objective predicates, so every cell is exact."""
+    N = 2520
+    x = np.arange(1, N + 1)
+    out = {}
+    for name, A, B in [
+        ("even vs multiple-of-3", x % 2 == 0, x % 3 == 0),       # independent (1/2 . 1/3 = 1/6)
+        ("even vs prime", x % 2 == 0, _primes_upto(N)[x]),       # strong negative coupling
+        ("multiple-of-6 vs multiple-of-4", x % 6 == 0, x % 4 == 0)]:  # positive coupling
+        p = contingency(A, B); PA, PB = p[0] + p[1], p[0] + p[2]
+        z = truth_resultant(p)
+        out[name] = {"cells": p, "PA": PA, "PB": PB, "z": z,
+                     "cov": float(p[0] * p[3] - p[1] * p[2]),
+                     "involution_resid": abs(PA - PB)}
+    return out
+
+
 # --- shared lattice geometry (positions / covering edges) ---------------------
 _POS = {
     "FALSE": (0.0, 0.0),
@@ -1379,6 +1468,16 @@ def main():
           f"(max err {res_tt['max_error']:.1e}):")
     for k, v in res_tt["errors"].items():
         print(f"    {k:<48} {v:.2e}")
+    res_ti = verify_truthiness_involution()
+    print(f"  PROOF — governing involution via framework e/sigma/conjugate "
+          f"(max err {res_ti['max_error']:.1e}):")
+    for k, v in res_ti["errors"].items():
+        print(f"    {k:<54} {v:.2e}")
+    print("  meaningful examples (cells COMPUTED from objective predicates over 1..2520):")
+    for name, ex in truthiness_examples().items():
+        c = ex["cells"]
+        print(f"    {name:32} cells={np.round(c,3)} P(A)={ex['PA']:.3f} P(B)={ex['PB']:.3f} "
+              f"Cov={ex['cov']:+.3f} z={ex['z'].real:+.3f}{ex['z'].imag:+.3f}i")
     make_figure(res_h)
     make_rotation_figure()
     make_gate_figure(res_g)

@@ -996,13 +996,28 @@ p_{00}=P(\lnot A\land\lnot B), \qquad \textstyle\sum p=1. $$
 
 The marginals $P(A)=p_{11}+p_{10}$ and $P(B)=p_{11}+p_{01}$ fix two sums; one degree of
 freedom remains — the **dependence** — bounded by the Fréchet inequalities
-$\max(0,P(A)+P(B)-1)\le p_{11}\le\min(P(A),P(B))$. We carry this through the structure in
-two contrasted embeddings.
+$\max(0,P(A)+P(B)-1)\le p_{11}\le\min(P(A),P(B))$.
+
+The cells are *determined formulaically* from the two True:False splits:
+
+> **Theorem 11.4 (outer product $+$ coupling).** Every table with the given marginals is
+> $$ \begin{bmatrix}p_{11}&p_{10}\\ p_{01}&p_{00}\end{bmatrix}
+> =\begin{bmatrix}P(A)\\P(\lnot A)\end{bmatrix}\!\begin{bmatrix}P(B)&P(\lnot B)\end{bmatrix}
+> +\;\gamma\begin{bmatrix}+1&-1\\-1&+1\end{bmatrix},\qquad \gamma=\operatorname{Cov}(A,B). $$
+> The first term is the independent **outer (Kronecker) product** of the two splits; the
+> coupling matrix is exactly the **XNOR$-$XOR** (agreement$-$disagreement) pattern, so
+> $\gamma>0$ routes mass onto the agreement (real) axis and $\gamma<0$ onto the
+> disagreement (imaginary) axis. The marginals are preserved for every $\gamma$, and
+> $\operatorname{Cov}=\gamma$ exactly. $\square$ (`verify_truthiness`.)
+
+For your splits $[0.7,0.3]$ and $[0.4,0.6]$ this gives $AB=0.28+\gamma$, $A\neg B=0.42-\gamma$,
+$\neg AB=0.12-\gamma$, $\neg A\neg B=0.18+\gamma$ — with $\gamma=0$ (independence) the bare
+outer product. We carry this through the structure in two contrasted embeddings.
 
 **Embedding 1 — phasor (in $\mathbb{C}$).** Give each minterm energy $=$ its mass, keep the
 landmark phase, and sum:
 
-> **Theorem 11.4 (resultant).** The mass-weighted sum of the four landmarks is
+> **Theorem 11.5 (resultant).** The mass-weighted sum of the four landmarks is
 > $$ z=p_{11}(+1)+p_{10}(+i)+p_{01}(-i)+p_{00}(-1)=\big(P(A)+P(B)-1\big)+i\big(P(A)-P(B)\big). $$
 > It depends **only on the marginals**, never on the dependence.
 > *Proof.* $\operatorname{Im}z=p_{10}-p_{01}=(P(A)-p_{11})-(P(B)-p_{11})=P(A)-P(B)$;
@@ -1014,16 +1029,25 @@ The real axis carries the *agreement lean* $P(A)+P(B)-1$; the imaginary axis car
 *marginal asymmetry* $P(A)-P(B)$. For the example $z=0.10+0.30\,i$ regardless of how $A,B$
 are coupled.
 
-**The governing involution now becomes a testable symmetry.** In the crisp case all
-energies were $1$, so $e(x)=e(y)$ when $\sigma(x)=-\sigma(y)$ held automatically. With
-masses it is a real condition on the table:
+**The governing involution now becomes a testable symmetry — computed, not asserted.** We
+do not reduce $e(x)=e(y):\sigma(x)=-\sigma(y)$ to a numeric condition by hand; we build the
+four minterms as genuine framework objects $m_k=(\text{energy})\,u_k$ with
+$u_k\in\{+1,+i,-i,-1\}$ and apply the framework's own $e(\cdot)$, $\sigma(\cdot)$,
+conjugation. Two facts then come straight out of `verify_truthiness_involution` (errors
+$\le10^{-16}$):
 
-> **Theorem 11.5 (the involutions are the obstructions in $z$).**
-> conjugation (the swap $A\!\leftrightarrow\!B$, i.e. $A\neg B\!\leftrightarrow\!\neg AB$)
-> preserves energy $\iff p_{10}=p_{01}\iff P(A)=P(B)\iff \operatorname{Im}z=0$; negation
-> (joint complement, $AB\!\leftrightarrow\!\neg A\neg B$) preserves energy $\iff
-> p_{11}=p_{00}\iff P(A)+P(B)=1\iff \operatorname{Re}z=0$; **both** hold $\iff z=0\iff
-> P(A)=P(B)=\tfrac12$ — the crisp symmetric circle. $\square$
+> **Theorem 11.6 (the involution under truthiness).** For every minterm object,
+> $\sigma(m^{*})=-\sigma(m)$ (the framework identity, error $0$). Conjugation **fixes** the
+> agreement landmarks $\pm1$ — where $\sigma=0$, since $\sigma$ reads the *unrealised*
+> (imaginary) direction and agreement is the realised/real axis — and **swaps** the
+> disagreement landmarks $\pm i$. Hence the conjugate-pair energy balance $e(x)=e(y)$
+> reduces, through $e(\cdot)$, to the single residual $e(m_{+i})-e(m_{-i})$, which in the
+> mass reading equals exactly $P(A)-P(B)$. So the governing involution holds
+> $\iff P(A)=P(B)\iff\operatorname{Im}z=0$. $\square$
+
+(The separate *negation* involution — the antipode $AB\!\leftrightarrow\!\neg A\neg B$ —
+is $\operatorname{Re}z=0\iff P(A)+P(B)=1$; both together give $z=0\iff P(A)=P(B)=\tfrac12$,
+the crisp circle.)
 
 So $z$ measures exactly how far a truthiness state sits from the crisp framework, and its
 two components are the two involution-obstructions. Your $A,B$ ($0.7,0.4$) break
@@ -1041,7 +1065,7 @@ marginals plus one coupling.
 $=\sqrt{\text{mass}}$ and treat the four as an *orthonormal basis* —
 $|\psi\rangle=\sum_k\sqrt{p_k}\,|{\rm minterm}_k\rangle$, a two-qubit amplitude state.
 
-> **Theorem 11.6 (dependence $=$ entanglement).** $|\psi\rangle$ is normalised, and its
+> **Theorem 11.7 (dependence $=$ entanglement).** $|\psi\rangle$ is normalised, and its
 > $2\times2$ amplitude matrix $M=\big[\begin{smallmatrix}\sqrt{p_{11}}&\sqrt{p_{10}}\\
 > \sqrt{p_{01}}&\sqrt{p_{00}}\end{smallmatrix}\big]$ is rank-one — a **product
 > (unentangled) state** — $\iff\det M=0\iff p_{11}p_{00}=p_{10}p_{01}\iff
@@ -1066,6 +1090,23 @@ the crisp centre $(\tfrac12,\tfrac12)$, and the example point sits off both. (C)
 embedding: as the one free dependence DOF $p_{11}$ sweeps its Fréchet range, $\det M$ and
 $\operatorname{Cov}$ vanish together exactly at independence — the unentangled product
 state.*
+
+**Worked examples with the cells computed, not guessed.** Taking $A,B$ as objective
+predicates over the integers $1..2520$ makes every cell exact (`truthiness_examples`):
+
+| $A$ vs $B$ | $(p_{11},p_{10},p_{01},p_{00})$ | $\operatorname{Cov}=\gamma$ | reading |
+|---|---|---|---|
+| even, multiple-of-3 | $(\tfrac16,\tfrac13,\tfrac16,\tfrac13)$ | $0$ | independent — a product/unentangled state |
+| even, prime | $(0.0004,0.50,0.146,0.354)$ | $-0.073$ | $\gamma<0$ — mass on the disagreement axis |
+| multiple-of-6, multiple-of-4 | $(0.083,0.083,0.167,0.667)$ | $+0.042$ | $\gamma>0$ — mass on the agreement axis |
+
+"Even" and "multiple-of-3" are exactly independent ($\tfrac12\cdot\tfrac13=\tfrac16$), so
+their Born state is an exact product; "even" and "prime" are strongly anti-coupled (only the
+single integer $2$ is both), pushing mass onto the imaginary/disagreement axis — the sign of
+$\gamma$ is the relationship, exactly as Theorem 11.4 predicts. (Fuzzy semantic pairs —
+*empathy/sympathy*, *induce/deduce* — fit the same template, but their cells require a
+labelled corpus of instances to be measured rather than asserted; we leave that to future
+work and do not put estimated numbers in the paper.)
 
 ## 12. Synthesis
 
@@ -1162,8 +1203,10 @@ python src/logic.py            # Section 11 -> fig16..fig24
   each report 0 violations); Theorems 11.1–11.3 are confirmed by `verify_relational_proofs`
   (decomposition to $6\times10^{-14}$ over $2\times10^{4}$ random quaternions) and
   `verify_correlation_trichotomy` (the exact logical reading, 0 violations); Theorems
-  11.4–11.6 (the truthiness extension — phasor resultant and Born/entanglement readings)
-  by `verify_truthiness` (to $5\times10^{-16}$ over $2\times10^{5}$ random distributions).
+  11.4–11.7 (the truthiness extension — outer-product/coupling, phasor resultant, the
+  involution via the framework's own $e/\sigma/$conjugate, and the Born/entanglement
+  reading) by `verify_truthiness` and `verify_truthiness_involution` (to $10^{-16}$ over
+  $2\times10^{5}$ random distributions), with worked exact examples in `truthiness_examples`.
 * `results/metrics.json`, `results/learning.json` — machine-readable records.
 
 ## Appendix B. Notation
