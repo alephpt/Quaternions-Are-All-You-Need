@@ -487,6 +487,25 @@ class PartialLogic:
         """The named gates that lie between the subset and the superset bound."""
         return lattice._by_size([l for l in lattice.nodes.values() if self.admits(l)])
 
+    def consistency_to(self, cursor):
+        """Line each landmark's known/unknown status up against a cursor's
+        consistency kappa = Re(c z̄).  Returns {landmark: (kappa, state)}."""
+        return {n: (consistency(n, cursor),
+                    "true" if n in self.known_true else
+                    "false" if n in self.known_false else "unknown")
+                for n in NAME_LM}
+
+    @classmethod
+    def from_cursor(cls, cursor, tau_lo, tau_hi):
+        """Read a partial logic off a cursor with a consistency *band*: landmarks
+        above ``tau_hi`` are known-true (the sublogic / subset bound), those below
+        ``tau_lo`` are known-false (carving the superset bound), the rest unknown.
+        Raising ``tau_lo`` walks the interval down exactly as learning facts does --
+        the bridge between the cursor (11.6) and the partial-logic sweep (11.5)."""
+        kt = {n for n in NAME_LM if consistency(n, cursor) >= tau_hi}
+        kf = {n for n in NAME_LM if consistency(n, cursor) < tau_lo}
+        return cls(kt, kf)
+
     def __repr__(self):
         return (f"PartialLogic(true={setstr(self.known_true)}, "
                 f"false={setstr(self.known_false)}, unknown={setstr(self.unknown)}) "
@@ -671,6 +690,49 @@ def verify_relational_quaternion() -> dict:
         "pure exclusion squares to -1 (a √-1)": sqrt_minus1,
     }
     return {"checks": checks, "violations": sum(1 for v in checks.values() if not v)}
+
+
+def verify_cursor_partial(lat: GateLattice) -> dict:
+    """The cursor's lower threshold reproduces the partial-logic learning sweep:
+    PartialLogic.from_cursor(c=+1, tau_lo, 1) is exactly the p0->p1->p2 of 11.5."""
+    c = 1 + 0j
+    names = lambda ls: {l.name for l in ls}
+    cases = [(-1.0, {"AND", "XNOR", "OR", "TRUE"}),   # band wide open  -> p0
+             (-0.5, {"AND", "OR"}),                    # raise floor     -> p1
+             (0.5, {"AND"})]                           # raise floor more-> p2
+    ok = all(names(PartialLogic.from_cursor(c, lo, 1.0).completions(lat)) == exp
+             and PartialLogic.from_cursor(c, lo, 1.0).known_true == frozenset({"1"})
+             for lo, exp in cases)
+    return {"checks": {"cursor band reproduces the learning sweep": ok},
+            "violations": 0 if ok else 1}
+
+
+def verify_three_proposition() -> dict:
+    """A worked example on the full imaginary 2-sphere: three propositions as unit
+    quaternions, their pairwise relational quaternions classified."""
+    one, I, J, K = F.ONE, F.I, F.J, F.K
+    R = relational_quaternion
+    pe = {}
+    for (na, a), (nb, b) in [(("p", I), ("q", J)), (("q", J), ("r", K)), (("r", K), ("p", I))]:
+        r = R(a, b)
+        pe[(na, nb)] = (_qclass(r), r[1:])
+    all_exclude = all(cl == "exclusion" for cl, _ in pe.values())
+    # each exclusion axis is one coordinate axis (the cross product of the pair)
+    axes_coord = all(abs(np.linalg.norm(v) - 1) < 1e-9 and int((np.abs(v) > 0.99).sum()) == 1
+                     for _, v in pe.values())
+    q45 = (I + J) / np.sqrt(2.0)                 # 45deg from i in the i-j plane
+    r45 = R(I, q45)
+    graded = (abs(r45[0] - 1 / np.sqrt(2)) < 1e-9
+              and abs(np.linalg.norm(r45[1:]) - 1 / np.sqrt(2)) < 1e-9)
+    contra = _qclass(R(I, -I)) == "contradiction"
+    checks = {
+        "three orthogonal props pairwise exclude": all_exclude,
+        "each exclusion axis is the cross-product axis": axes_coord,
+        "45° proposition is half-align half-exclude": graded,
+        "antipodal props contradict (R(i,-i)=-1)": contra,
+    }
+    return {"checks": checks, "violations": sum(1 for v in checks.values() if not v),
+            "pairexcl": pe, "r45": r45}
 
 
 # --- shared lattice geometry (positions / covering edges) ---------------------
@@ -896,6 +958,59 @@ def make_cursor_figure():
     print(f"  wrote {os.path.relpath(path)}")
 
 
+def make_three_proposition_figure(res3: dict):
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+    fig = plt.figure(figsize=(12.8, 5.8))
+
+    ax = fig.add_subplot(1, 2, 1, projection="3d")
+    u, v = np.mgrid[0:2 * np.pi:40j, 0:np.pi:20j]
+    ax.plot_surface(np.cos(u) * np.sin(v), np.sin(u) * np.sin(v), np.cos(v),
+                    color="0.9", alpha=0.16, linewidth=0)
+    props = {"p = i": ((1, 0, 0), "#1f77b4"), "q = j": ((0, 1, 0), "#2ca02c"),
+             "r = k": ((0, 0, 1), "#d62728")}
+    for lab, (vec, col) in props.items():
+        ax.quiver(0, 0, 0, *vec, color=col, lw=3)
+        ax.text(vec[0] * 1.22, vec[1] * 1.22, vec[2] * 1.22, lab, color=col, fontsize=10)
+    excl = {("p", "q"): (0, 0, -1), ("q", "r"): (-1, 0, 0), ("r", "p"): (0, -1, 0)}
+    for (a, b), vec in excl.items():
+        ax.quiver(0, 0, 0, *vec, color="0.55", lw=1.4, linestyle="dashed")
+        ax.text(vec[0] * 1.18, vec[1] * 1.18, vec[2] * 1.18, f"excl({a},{b})",
+                color="0.4", fontsize=7.3)
+    ax.set_box_aspect((1, 1, 1)); ax.set_axis_off()
+    ax.set_title("three orthogonal propositions on the imaginary 2-sphere\n"
+                 "each pair excludes along the third (cross-product) axis", fontsize=10)
+
+    ax2 = fig.add_subplot(1, 2, 2); ax2.axis("off")
+    lines = [
+        (r"$R(p,q)=p\,\bar q$ : scalar $=$ align/contradict,", "0.15"),
+        (r"                       vector $=$ exclusion axis", "0.15"),
+        ("", "k"),
+        (r"$R(i,j)=-k$    exclude along $-k$", "#7f7f7f"),
+        (r"$R(j,k)=-i$    exclude along $-i$", "#7f7f7f"),
+        (r"$R(k,i)=-j$    exclude along $-j$", "#7f7f7f"),
+        ("", "k"),
+        (r"$R(i,-i)=-1$    contradiction (antipodal)", "#d62728"),
+        (r"$R(i,i)=+1$    alignment", "#2ca02c"),
+        ("", "k"),
+        (r"$R\left(i,\frac{i+j}{\sqrt{2}}\right)=\frac{1-k}{\sqrt{2}}$", "#1f77b4"),
+        (r"   half alignment $(+\frac{1}{\sqrt{2}})$, half exclusion along $-k$", "#1f77b4"),
+        ("", "k"),
+        ("exclusion is DIRECTIONAL — a 2-sphere of axes,", "0.3"),
+        (r"invisible in $\mathbb{C}$ (only $\pm i$ there).", "0.3"),
+    ]
+    y = 0.97
+    for txt, col in lines:
+        ax2.text(0.0, y, txt, va="top", ha="left", fontsize=11, color=col)
+        y -= 0.066
+    ax2.set_title("the relational quaternions, classified", fontsize=10)
+
+    fig.suptitle("A three-proposition example on the full 2-sphere", y=1.02, fontsize=12.5)
+    path = os.path.join(FIG_DIR, "fig23_three_prop.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
+
+
 def make_figure(res_h: dict):
     fig = plt.figure(figsize=(13.5, 4.6))
     gs = fig.add_gridspec(1, 3, width_ratios=[1.15, 1, 1])
@@ -1003,9 +1118,17 @@ def main():
     print(f"  consistency cursor: {res_c['violations']} violations")
     for k, v in res_c["checks"].items():
         print(f"    {k:<46} {v}")
+    res_cp = verify_cursor_partial(lat)
+    print(f"  cursor <-> partial bridge: {res_cp['violations']} violations")
+    for k, v in res_cp["checks"].items():
+        print(f"    {k:<46} {v}")
     res_rq = verify_relational_quaternion()
     print(f"  relational quaternion: {res_rq['violations']} violations")
     for k, v in res_rq["checks"].items():
+        print(f"    {k:<46} {v}")
+    res3 = verify_three_proposition()
+    print(f"  three-proposition (2-sphere): {res3['violations']} violations")
+    for k, v in res3["checks"].items():
         print(f"    {k:<46} {v}")
     make_figure(res_h)
     make_rotation_figure()
@@ -1014,6 +1137,7 @@ def main():
     make_subset_figure(lat)
     make_partial_figure(res_d)
     make_cursor_figure()
+    make_three_proposition_figure(res3)
 
 
 if __name__ == "__main__":

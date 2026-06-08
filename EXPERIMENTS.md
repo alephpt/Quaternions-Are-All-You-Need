@@ -8,7 +8,7 @@ python src/spinor.py     # Thread 1 -> figures/fig9_spinor.png
 python src/dirac.py      # Thread 2 -> figures/fig10_dirac.png
 python src/qnn.py        # Thread 3 -> figures/fig11..fig14
 python src/ledger.py     # Thread 4 -> figures/fig15_ledger.png
-python src/logic.py      # Thread 5 -> figures/fig16..fig22 (logic, rotation, gates, lattice maps, cursor)
+python src/logic.py      # Thread 5 -> figures/fig16..fig23 (logic, rotation, gates, lattice, cursor, 2-sphere)
 ```
 
 ---
@@ -271,6 +271,14 @@ cursors), rotation is a free gauge, and at the quaternion level exclusion gains 
 direction — the exclusion relations *are* the unit imaginaries (√−1).
 
 ![consistency cursor](figures/fig22_cursor.png)
+
+The cursor and the partial-logic lattice are the *same* object: `PartialLogic.from_cursor(c, τ_lo, τ_hi)` reads a partial logic off a cursor band, and raising `τ_lo` reproduces the
+`p0→p1→p2` learning sweep exactly (0 violations). **Three-proposition example on the full
+2-sphere** (`p=i, q=j, r=k`): each pair excludes along the third axis (`R(i,j)=−k`,
+`R(j,k)=−i`, `R(k,i)=−j`), antipodes contradict (`R(i,−i)=−1`), and a 45° proposition
+`(i+j)/√2` is half-align/half-exclude (`R = (1−k)/√2`) — all exact.
+
+![three propositions](figures/fig23_three_prop.png)
 
 ---
 

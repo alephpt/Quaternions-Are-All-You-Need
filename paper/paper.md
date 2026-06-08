@@ -884,6 +884,13 @@ labellings — the paper's minterm map and the contrast map $A\!=\!-1,B\!=\!+1,A
 they read as a *contradiction*, while a single proposition and a joint state read as
 *exclusion*, $R(A,AB)=\pm i$.)
 
+This is the same object as the `PartialLogic` of §11.5, now read off a cursor: a cursor
+with a consistency *band* $[\tau_{\text{lo}},\tau_{\text{hi}}]$ defines a partial logic
+(`PartialLogic.from_cursor`) — landmarks above $\tau_{\text{hi}}$ are known-true (the
+subset bound), those below $\tau_{\text{lo}}$ are known-false (carving the superset
+bound). Raising $\tau_{\text{lo}}$ reproduces the $p_0\!\to\!p_1\!\to\!p_2$ learning sweep
+of §11.5 *exactly* (verified): the cursor's lower threshold **is** the act of learning.
+
 ![the consistency cursor](../figures/fig22_cursor.png)
 
 *Figure 22. (A) A cursor at $+1$: each landmark's consistency $\operatorname{Re}(c\bar z)$
@@ -904,13 +911,35 @@ $(\pm1)$; **exclusion is imaginary, and its three dimensions are exactly the $i,
 whole construction is about.** The "realised imaginaries" are the exclusion-relations
 between propositions.
 
+**A worked example on the full 2-sphere.** Take three propositions as unit imaginary
+quaternions $p=i,\ q=j,\ r=k$ — three orthogonal directions. Every pair *excludes*, and
+each exclusion points along the third, cross-product axis (all exact):
+
+$$ R(i,j)=-k,\qquad R(j,k)=-i,\qquad R(k,i)=-j. $$
+
+There is no contradiction among them (that would need an antipode, $R(i,-i)=-1$) and no
+alignment (that is $R(i,i)=+1$): three mutually orthogonal propositions form a pure
+*exclusion triangle*, each edge labelled by the axis it excludes along. The measure is
+also graded — a proposition at $45^\circ$, $q=\tfrac{i+j}{\sqrt2}$, gives
+$R\!\left(i,\tfrac{i+j}{\sqrt2}\right)=\tfrac{1-k}{\sqrt2}$: half alignment (scalar
+$+\tfrac1{\sqrt2}$) and half exclusion (vector $-\tfrac{k}{\sqrt2}$). This directional,
+graded structure is exactly what is invisible in $\mathbb{C}$, where exclusion has only
+the two values $\pm i$, and it is the content the three imaginary dimensions supply.
+
+![three propositions on the 2-sphere](../figures/fig23_three_prop.png)
+
+*Figure 23. Three orthogonal propositions $p=i,q=j,r=k$ on the imaginary 2-sphere (left);
+each pair excludes along the third (cross-product) axis. Right: the relational quaternions
+$R=p\bar q$ classified — pairwise exclusions, the antipodal contradiction, the self-
+alignment, and a graded $45^\circ$ case that is half alignment and half exclusion.*
+
 ## 12. Synthesis
 
-Two claims, at two confidence levels. The **algebraic** claim is settled: among
-finite-dimensional associative real division algebras, the Hamilton product is the
-unique way to keep associativity, distributivity and non-contradiction while
-realising magnitude-and-direction in higher dimension. For *the algebra*,
-quaternions are all you need.
+Two empirical claims at two confidence levels, and one structural reading. The
+**algebraic** claim is settled: among finite-dimensional associative real division
+algebras, the Hamilton product is the unique way to keep associativity, distributivity
+and non-contradiction while realising magnitude-and-direction in higher dimension. For
+*the algebra*, quaternions are all you need.
 
 The **learning** claim is conditional and we state it without inflation: the Hamilton
 product is a strong *prior*, not a universal speedup. When the data carries genuine
@@ -921,6 +950,17 @@ outright (Section 9.3). The interesting, defensible thesis to pursue is therefor
 is a correct and sample-efficient inductive bias for data with rotational/spinorial
 structure** — a claim Section 9.2 already supports and that future work can test at
 scale.
+
+Beneath both sits the **logical** reading (Part III), exact and interpretive rather than
+a headline result. The four landmarks of the circle are the minterms of two Boolean
+variables; multiplication is bitwise XOR dressed with a Boolean sign; the symmetric gates
+form one inclusion lattice that a *consistency cursor* sweeps between sublogic and
+superlogic, reading off the three relations a partial logic can carry — alignment,
+exclusion, contradiction — as $\operatorname{Re}(c\bar z)=+1/0/-1$. The same measure
+lifts to the quaternions, where exclusion gains a *direction*: the exclusion-relations
+*are* the unit imaginaries $i,j,k$. This adds no theorem, but it is verified to machine
+precision (`src/logic.py`, every check 0 violations) and returns the construction to its
+own opening premise — that the framework was a logic all along.
 
 ### 12.1 Limitations
 
@@ -961,7 +1001,7 @@ python src/spinor.py           # Section 7  -> fig9
 python src/dirac.py            # Section 8  -> fig10
 python src/qnn.py              # Section 9  -> fig11..fig14; results/learning.json
 python src/ledger.py           # Section 10 -> fig15
-python src/logic.py            # Section 11 -> fig16..fig22
+python src/logic.py            # Section 11 -> fig16..fig23
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,
