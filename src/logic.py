@@ -359,69 +359,304 @@ def verify_lattice() -> dict:
     return {"checks": checks, "violations": violations, "sets": S}
 
 
-def make_lattice_figure(res_l: dict):
-    S = res_l["sets"]
-    # position by size (y) and a left/right spread chosen so complements are
-    # point-symmetric through the centre (0, 2)
-    pos = {
-        "FALSE": (0.0, 0.0),
-        "AND": (-0.8, 1.0), "NOR": (0.8, 1.0),
-        "XNOR": (-1.0, 2.0), "XOR": (1.0, 2.0),
-        "OR": (-0.8, 3.0), "NAND": (0.8, 3.0),
-        "TRUE": (0.0, 4.0),
+# =============================================================================
+#  A data structure for partial logics, and their map between subset / superset
+# =============================================================================
+LM_ORDER = {"1": 0, "i": 1, "-1": 2, "-i": 3}
+
+
+def setstr(s) -> str:
+    return "∅" if not s else "{" + ",".join(sorted(s, key=LM_ORDER.get)) + "}"
+
+
+class Logic:
+    """A *total* logic over two propositions A, B: the set of unit-circle
+    landmarks (minterms) on which it is true.  The order on logics is set
+    inclusion -- ``a <= b`` means *a is a subset (refinement) of b*."""
+
+    __slots__ = ("name", "trueset")
+
+    def __init__(self, name: str, trueset):
+        self.name = name
+        self.trueset = frozenset(trueset)
+
+    def __le__(self, o): return self.trueset <= o.trueset
+    def __lt__(self, o): return self.trueset < o.trueset
+    def __ge__(self, o): return self.trueset >= o.trueset
+    def is_subset_of(self, o): return self.trueset <= o.trueset
+    def is_superset_of(self, o): return self.trueset >= o.trueset
+
+    def complement(self) -> "Logic":
+        return Logic(self.name + "^c", ALL_LM - self.trueset)
+
+    def __eq__(self, o): return isinstance(o, Logic) and self.trueset == o.trueset
+    def __hash__(self): return hash(self.trueset)
+    def __repr__(self): return f"{self.name}={setstr(self.trueset)}"
+
+
+class GateLattice:
+    """The inclusion lattice of named logics over the landmarks {1,i,-1,-i}.
+
+    This is the data structure that lets a *partial* logic be located between a
+    subset bound and a superset bound.  It exposes the two maps explicitly:
+    ``subsets``/``principal_ideal`` (downward, toward the parts) and
+    ``supersets``/``principal_filter`` (upward, toward the wholes), plus the
+    Hasse covers and the lattice operations ``meet`` (=intersection) and
+    ``join`` (=union)."""
+
+    def __init__(self, logics):
+        self.nodes = {l.name: l for l in logics}
+
+    def __getitem__(self, name) -> Logic: return self.nodes[name]
+
+    def _by_size(self, ls): return sorted(ls, key=lambda l: (len(l.trueset), l.name))
+
+    def supersets(self, x, strict=False):
+        return self._by_size([y for y in self.nodes.values()
+                              if (x < y if strict else x <= y)])
+
+    def subsets(self, x, strict=False):
+        return self._by_size([y for y in self.nodes.values()
+                              if (y < x if strict else y <= x)])
+
+    def covers_up(self, x):       # immediate supersets (one Hasse step up)
+        sup = self.supersets(x, strict=True)
+        return [y for y in sup if not any(x < z and z < y for z in sup)]
+
+    def covers_down(self, x):     # immediate subsets (one Hasse step down)
+        sub = self.subsets(x, strict=True)
+        return [y for y in sub if not any(y < z and z < x for z in sub)]
+
+    def principal_filter(self, x):   # up-set: every logic that CONTAINS x
+        return self.supersets(x)
+
+    def principal_ideal(self, x):    # down-set: every logic CONTAINED IN x
+        return self.subsets(x)
+
+    def meet(self, x, y) -> Logic:   # greatest lower bound = intersection
+        return self._named(x.trueset & y.trueset)
+
+    def join(self, x, y) -> Logic:   # least upper bound = union
+        return self._named(x.trueset | y.trueset)
+
+    def _named(self, ts):            # name a true-set if it is one of our nodes
+        ts = frozenset(ts)
+        for l in self.nodes.values():
+            if l.trueset == ts:
+                return l
+        return Logic("?", ts)
+
+
+class PartialLogic:
+    """A *partial* logic: every landmark is known-true, known-false, or unknown.
+
+    It denotes the closed interval of total logics ``[lower, upper]`` with
+
+        lower = the known-true landmarks      -- the SUBSET bound (strongest),
+        upper = everything not known-false    -- the SUPERSET bound (weakest).
+
+    Learning one more fact refines an unknown landmark and shrinks the interval:
+    asserting a landmark true raises the subset bound, ruling it false lowers the
+    superset bound.  A partial logic is therefore literally a position *between*
+    a subset and a superset, and learning walks it from the superset bound down
+    toward a single subset."""
+
+    __slots__ = ("known_true", "known_false")
+
+    def __init__(self, known_true=(), known_false=()):
+        self.known_true = frozenset(known_true)
+        self.known_false = frozenset(known_false)
+
+    @property
+    def lower(self): return self.known_true              # subset bound
+    @property
+    def upper(self): return ALL_LM - self.known_false    # superset bound
+    @property
+    def unknown(self): return ALL_LM - self.known_true - self.known_false
+
+    def is_consistent(self): return not (self.known_true & self.known_false)
+
+    def admits(self, logic: Logic) -> bool:
+        """Is this total logic a completion (lower <= logic <= upper)?"""
+        return self.known_true <= logic.trueset <= self.upper
+
+    def learn_true(self, lm):  return PartialLogic(self.known_true | {lm}, self.known_false)
+    def learn_false(self, lm): return PartialLogic(self.known_true, self.known_false | {lm})
+
+    def completions(self, lattice: GateLattice):
+        """The named gates that lie between the subset and the superset bound."""
+        return lattice._by_size([l for l in lattice.nodes.values() if self.admits(l)])
+
+    def __repr__(self):
+        return (f"PartialLogic(true={setstr(self.known_true)}, "
+                f"false={setstr(self.known_false)}, unknown={setstr(self.unknown)}) "
+                f"-> subset {setstr(self.lower)} .. superset {setstr(self.upper)}")
+
+
+def build_lattice() -> GateLattice:
+    S = {name: gate_trueset(name) for name in GATES}
+    S["FALSE"] = frozenset()
+    S["TRUE"] = ALL_LM
+    return GateLattice([Logic(n, s) for n, s in S.items()])
+
+
+def verify_datastructure(lat: GateLattice) -> dict:
+    """Exercise the data structure and the partial-logic interval; all exact."""
+    AND, NAND = lat["AND"], lat["NAND"]
+    names = lambda ls: {l.name for l in ls}
+
+    filt = lat.principal_filter(AND)      # wholes containing AND
+    ideal = lat.principal_ideal(NAND)     # parts contained in NAND
+    # complement duality:  S in (up-set of AND)  <=>  S^c in (down-set of NAND)
+    dual = {frozenset(ALL_LM - l.trueset) for l in filt} == {l.trueset for l in ideal}
+
+    # the worked example: start knowing only "both true" (landmark 1) holds, then
+    # learn facts; watch the interval narrow from the TRUE superset to the AND subset.
+    p0 = PartialLogic(known_true={"1"})
+    p1 = p0.learn_false("-1")
+    p2 = p1.learn_false("i").learn_false("-i")
+    trace = [p0, p1, p2]
+
+    checks = {
+        "filter(AND) == {AND,XNOR,OR,TRUE}": names(filt) == {"AND", "XNOR", "OR", "TRUE"},
+        "ideal(NAND) == {NAND,XOR,NOR,FALSE}": names(ideal) == {"NAND", "XOR", "NOR", "FALSE"},
+        "up(AND) is complement-dual of down(NAND)": dual,
+        "covers_up(AND) == {XNOR,OR}": names(lat.covers_up(AND)) == {"XNOR", "OR"},
+        "covers_down(NAND) == {XOR,NOR}": names(lat.covers_down(NAND)) == {"XOR", "NOR"},
+        "meet(XNOR,OR) == AND": lat.meet(lat["XNOR"], lat["OR"]) == AND,
+        "join(AND,NOR) == XNOR": lat.join(AND, lat["NOR"]) == lat["XNOR"],
+        "join(XNOR,XOR) == TRUE": lat.join(lat["XNOR"], lat["XOR"]) == lat["TRUE"],
+        "meet(XNOR,XOR) == FALSE": lat.meet(lat["XNOR"], lat["XOR"]) == lat["FALSE"],
+        "partial p0 completions == filter(AND)":
+            names(p0.completions(lat)) == {"AND", "XNOR", "OR", "TRUE"},
+        "partial p1 completions == {AND,OR}":
+            names(p1.completions(lat)) == {"AND", "OR"},
+        "partial p2 collapses to {AND}":
+            names(p2.completions(lat)) == {"AND"},
     }
-    edges = [("FALSE", "AND"), ("FALSE", "NOR"), ("FALSE", "XOR"),
-             ("AND", "XNOR"), ("AND", "OR"), ("NOR", "XNOR"), ("NOR", "NAND"),
-             ("XOR", "OR"), ("XOR", "NAND"),
-             ("XNOR", "TRUE"), ("OR", "TRUE"), ("NAND", "TRUE")]
-    bold = {("AND", "XNOR"), ("XOR", "NAND")}     # the user's superset>subset pairs
+    violations = sum(1 for v in checks.values() if not v)
+    return {"checks": checks, "violations": violations, "trace": trace, "lattice": lat}
 
-    fig, ax = plt.subplots(figsize=(7.6, 7.2))
-    for u, v in edges:
-        (x0, y0), (x1, y1) = pos[u], pos[v]
-        if (u, v) in bold:
-            ax.plot([x0, x1], [y0, y1], color="#ff7f0e", lw=3, zorder=1)
-        else:
-            ax.plot([x0, x1], [y0, y1], color="0.7", lw=1.2, zorder=1)
 
-    setstr = lambda name: "{" + ",".join(sorted(S[name],
-                              key=lambda s: {"1": 0, "i": 1, "-1": 2, "-i": 3}[s])) + "}" \
-                              if S[name] else "∅"
-    colors = {"XNOR": "#2ca02c", "XOR": "#d62728", "AND": "#1f77b4", "NOR": "#1f77b4",
-              "OR": "#9467bd", "NAND": "#9467bd", "TRUE": "0.3", "FALSE": "0.3"}
-    short = {"TRUE": "⊤", "FALSE": "⊥"}
-    for name, (x, y) in pos.items():
-        ax.scatter([x], [y], s=900, color=colors.get(name, "0.5"),
-                   edgecolor="black", zorder=3, alpha=0.92)
-        ax.annotate(short.get(name, name), (x, y), ha="center", va="center",
-                    fontsize=9.5, color="white", fontweight="bold", zorder=4)
-        # the true-set as an offset label, pushed outward from the centre column
-        if x < 0:
-            ox, ha = -22, "right"
-        elif x > 0:
-            ox, ha = 22, "left"
-        else:
-            ox, ha = 0, "center"
-        oy = 0 if x != 0 else (20 if y > 2 else -20)
-        ax.annotate(setstr(name), (x, y), textcoords="offset points",
-                    xytext=(ox, oy), ha=ha, va="center", fontsize=8.5,
-                    color=colors.get(name, "0.4"), zorder=4)
+# --- shared lattice geometry (positions / covering edges) ---------------------
+_POS = {
+    "FALSE": (0.0, 0.0),
+    "AND": (-0.8, 1.0), "NOR": (0.8, 1.0),
+    "XNOR": (-1.0, 2.0), "XOR": (1.0, 2.0),
+    "OR": (-0.8, 3.0), "NAND": (0.8, 3.0),
+    "TRUE": (0.0, 4.0),
+}
+_EDGES = [("FALSE", "AND"), ("FALSE", "NOR"), ("FALSE", "XOR"),
+          ("AND", "XNOR"), ("AND", "OR"), ("NOR", "XNOR"), ("NOR", "NAND"),
+          ("XOR", "OR"), ("XOR", "NAND"),
+          ("XNOR", "TRUE"), ("OR", "TRUE"), ("NAND", "TRUE")]   # each (smaller, larger)
+_COLORS = {"XNOR": "#2ca02c", "XOR": "#d62728", "AND": "#1f77b4", "NOR": "#1f77b4",
+           "OR": "#9467bd", "NAND": "#9467bd", "TRUE": "0.3", "FALSE": "0.3"}
+_SHORT = {"TRUE": "⊤", "FALSE": "⊥"}
 
-    # annotate the two halves and the dynamics
-    ax.annotate("", xy=(0.78, 2.0), xytext=(-0.78, 2.0),
-                arrowprops=dict(arrowstyle="<->", color="0.4", lw=1, ls=":"))
-    ax.text(0.0, 2.16, "two complementary halves\n(union = whole, ∩ = ∅)",
-            ha="center", fontsize=8, color="0.4")
-    ax.text(-1.55, 1.0, "parts\n(subsets:\npoles)", ha="center", fontsize=9, color="#1f77b4")
-    ax.text(1.62, 3.0, "wholes\n(supersets)", ha="center", fontsize=9, color="#9467bd")
-    ax.text(0.0, -0.42, "orange = the superset⊃subset pairs  XNOR⊃AND,  NAND⊃XOR\n"
-            "(complement = point reflection through the centre; rotation 90° swaps the halves)",
-            ha="center", fontsize=8.5, color="0.3")
 
-    ax.set_xlim(-2.1, 2.1); ax.set_ylim(-0.8, 4.5); ax.axis("off")
-    ax.set_title("The gate lattice: the whole and the parts\n"
-                 "(subset $\\subset$ superset, ordered by size of true-set)", fontsize=12)
-    path = os.path.join(FIG_DIR, "fig19_lattice.png")
+def _draw_node(ax, lat, name, active=True, ring=None):
+    x, y = _POS[name]
+    base = _COLORS.get(name, "0.5") if active else "0.85"
+    ax.scatter([x], [y], s=900, color=base, edgecolor="black",
+               linewidths=(1.0 if active else 0.5), zorder=3, alpha=0.95 if active else 0.6)
+    if ring is not None:
+        ax.scatter([x], [y], s=1500, facecolors="none", edgecolors=ring,
+                   linewidths=2.6, zorder=4)
+    ax.annotate(_SHORT.get(name, name), (x, y), ha="center", va="center",
+                fontsize=9.5, color="white" if active else "0.5",
+                fontweight="bold", zorder=5)
+    ox, ha = (-22, "right") if x < 0 else ((22, "left") if x > 0 else (0, "center"))
+    oy = 0 if x != 0 else (20 if y > 2 else -20)
+    ax.annotate(setstr(lat[name].trueset), (x, y), textcoords="offset points",
+                xytext=(ox, oy), ha=ha, va="center", fontsize=8.2,
+                color=(_COLORS.get(name, "0.4") if active else "0.7"), zorder=5)
+
+
+def _directed_diagram(ax, lat, focus, relation, col):
+    """Draw the whole lattice faded, then the principal filter (relation=
+    'superset') or ideal (relation='subset') of `focus` as directed arrows."""
+    members = {l.name for l in (lat.principal_filter(lat[focus]) if relation == "superset"
+                                else lat.principal_ideal(lat[focus]))}
+    for u, v in _EDGES:                              # faint background skeleton
+        if not (u in members and v in members):
+            ax.plot([_POS[u][0], _POS[v][0]], [_POS[u][1], _POS[v][1]],
+                    color="0.86", lw=1.0, zorder=1)
+    for u, v in _EDGES:                              # directed arrows inside the set
+        if u in members and v in members:
+            start, end = (_POS[u], _POS[v]) if relation == "superset" else (_POS[v], _POS[u])
+            ax.annotate("", xy=end, xytext=start,
+                        arrowprops=dict(arrowstyle="-|>", color=col, lw=2.6,
+                                        shrinkA=16, shrinkB=16), zorder=2)
+    for name in _POS:
+        _draw_node(ax, lat, name, active=(name in members),
+                   ring=(col if name == focus else None))
+    ax.set_xlim(-2.2, 2.2); ax.set_ylim(-0.9, 4.6); ax.axis("off")
+
+
+def make_superset_figure(lat: GateLattice):
+    fig, ax = plt.subplots(figsize=(7.0, 7.0))
+    _directed_diagram(ax, lat, "AND", "superset", "#9467bd")
+    ax.set_title("Superset view — the principal filter $\\uparrow$AND\n"
+                 "from a part, the wholes that contain it (arrows point to supersets)",
+                 fontsize=11)
+    ax.text(0.0, -0.7, "AND $\\subset$ XNOR $\\subset$ ⊤   and   AND $\\subset$ OR $\\subset$ ⊤\n"
+            "the up-set $\\{$AND, XNOR, OR, ⊤$\\}$ — every logic in which \"both true\" still holds",
+            ha="center", fontsize=8.6, color="#6a4ca0")
+    path = os.path.join(FIG_DIR, "fig19_superset.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
+
+
+def make_subset_figure(lat: GateLattice):
+    fig, ax = plt.subplots(figsize=(7.0, 7.0))
+    _directed_diagram(ax, lat, "NAND", "subset", "#1f77b4")
+    ax.set_title("Subset view — the principal ideal $\\downarrow$NAND\n"
+                 "from a whole, the parts it contains (arrows point to subsets)",
+                 fontsize=11)
+    ax.text(0.0, -0.7, "NAND $\\supset$ XOR $\\supset$ ∅   and   NAND $\\supset$ NOR $\\supset$ ∅\n"
+            "the down-set $\\{$NAND, XOR, NOR, ∅$\\}$ — the complement-dual of $\\uparrow$AND",
+            ha="center", fontsize=8.6, color="#155f9c")
+    path = os.path.join(FIG_DIR, "fig20_subset.png")
+    fig.savefig(path, bbox_inches="tight", dpi=130)
+    plt.close(fig)
+    print(f"  wrote {os.path.relpath(path)}")
+
+
+def make_partial_figure(res_d: dict):
+    """The worked example: a partial logic narrowing from the superset bound (⊤)
+    down to the subset bound (AND) as facts are learned."""
+    lat, trace = res_d["lattice"], res_d["trace"]
+    captions = [
+        "know: AB true; rest unknown",
+        "learn: ¬A¬B (−1) is false",
+        "learn: also A¬B, ¬AB false",
+    ]
+    fig, axes = plt.subplots(1, 3, figsize=(13.8, 5.0))
+    for ax, p, cap in zip(axes, trace, captions):
+        comp = {l.name for l in p.completions(lat)}
+        lo = lat._named(p.lower).name      # subset bound (may be unnamed -> '?')
+        hi = lat._named(p.upper).name      # superset bound
+        for u, v in _EDGES:                # skeleton; bold edges inside the interval
+            inside = u in comp and v in comp
+            ax.plot([_POS[u][0], _POS[v][0]], [_POS[u][1], _POS[v][1]],
+                    color=("#444" if inside else "0.86"),
+                    lw=(2.2 if inside else 1.0), zorder=1)
+        for name in _POS:
+            ring = "#2ca02c" if name == lo else ("#9467bd" if name == hi else None)
+            _draw_node(ax, lat, name, active=(name in comp), ring=ring)
+        ax.set_xlim(-2.2, 2.2); ax.set_ylim(-1.0, 4.6); ax.axis("off")
+        ax.set_title(cap, fontsize=10)
+        ax.text(0.0, -0.78,
+                f"true={setstr(p.known_true)}  false={setstr(p.known_false)}\n"
+                f"subset bound {setstr(p.lower)}  ..  superset bound {setstr(p.upper)}\n"
+                f"completions: {{{', '.join(sorted(comp, key=lambda n: len(lat[n].trueset)))}}}",
+                ha="center", fontsize=8.0, color="0.25")
+    fig.suptitle("A partial logic mapped between its subset bound (green) and superset bound (purple)\n"
+                 "learning shrinks the interval from ⊤ down to the single subset AND",
+                 y=1.02, fontsize=12)
+    path = os.path.join(FIG_DIR, "fig21_partial.png")
     fig.savefig(path, bbox_inches="tight", dpi=130)
     plt.close(fig)
     print(f"  wrote {os.path.relpath(path)}")
@@ -522,10 +757,20 @@ def main():
     print(f"  gate lattice (whole/part): {res_l['violations']} violations")
     for k, v in res_l["checks"].items():
         print(f"    {k:<28} {v}")
+    lat = build_lattice()
+    res_d = verify_datastructure(lat)
+    print(f"  partial-logic data structure: {res_d['violations']} violations")
+    for k, v in res_d["checks"].items():
+        print(f"    {k:<44} {v}")
+    print("  worked example (interval narrows superset -> subset):")
+    for p in res_d["trace"]:
+        print(f"    {p}")
     make_figure(res_h)
     make_rotation_figure()
     make_gate_figure(res_g)
-    make_lattice_figure(res_l)
+    make_superset_figure(lat)
+    make_subset_figure(lat)
+    make_partial_figure(res_d)
 
 
 if __name__ == "__main__":

@@ -770,20 +770,65 @@ lattice itself — whole over part, half against half — is invariant.
 half; the poles are AND $(+1)$ and NOR $(-1)$. Right: AND is one half-plane, XOR needs
 an axis and its orthogonal — the parity gates are the genuinely two-axis ones.*
 
-Collected into one picture, the gates form an inclusion lattice — the whole/part view:
+**The two maps, drawn separately.** Inclusion runs in two directions, and we draw each
+on its own. The **superset map** is the *principal filter* $\uparrow x$ — from a part,
+the wholes that contain it. Taking the smallest gate AND $=\{1\}$ as the part,
+$\uparrow\mathrm{AND}=\{\mathrm{AND}\subset\mathrm{XNOR}\subset\top,\ \mathrm{AND}\subset
+\mathrm{OR}\subset\top\}$: every logic in which "both true" still holds. The **subset
+map** is the *principal ideal* $\downarrow x$ — from a whole, the parts it contains.
+Taking the whole NAND $=\{-1,i,-i\}$, $\downarrow\mathrm{NAND}=\{\mathrm{NAND}\supset
+\mathrm{XOR}\supset\varnothing,\ \mathrm{NAND}\supset\mathrm{NOR}\supset\varnothing\}$.
+The two are not independent: $\downarrow\mathrm{NAND}$ is exactly the complement-image of
+$\uparrow\mathrm{AND}$ (since $S\supseteq\mathrm{AND}\iff S^{c}\subseteq\mathrm{NAND}$),
+verified to hold node-for-node.
 
-![the gate lattice](../figures/fig19_lattice.png)
+![the superset map](../figures/fig19_superset.png)
 
-*Figure 19. The gates as a whole/part lattice, ordered by the size of their true-set:
-$\bot=\varnothing$ at the bottom, $\top$ at the top, the two complementary halves
-(XNOR, XOR) across the middle, the poles (AND, NOR) as parts beneath. Orange marks the
-superset $\supset$ subset pairs XNOR$\supset$AND and NAND$\supset$XOR; complement is
-the point reflection through the centre.*
+*Figure 19. Superset view — the principal filter $\uparrow$AND. From the part AND, arrows
+point to every whole that contains it; the rest of the lattice is greyed. This is the
+"map up" toward the wholes.*
 
-So, per orthogonal axis pair, the structure is a single lattice read two ways: *half
-agreement (XNOR, with the AND/NOR poles as its parts) and half disagreement (XOR, part
-of the NAND/OR wholes)* — and conjugation, negation, and rotation simply move between
-equivalent framings of the same four states.
+![the subset map](../figures/fig20_subset.png)
+
+*Figure 20. Subset view — the principal ideal $\downarrow$NAND. From the whole NAND,
+arrows point to every part it contains. It is the complement-dual of Figure 19: reflect
+$\uparrow$AND through the centre and recolour, and you get $\downarrow$NAND.*
+
+**A data structure mapping partial logics between subset and superset.** The lattice is
+implemented as a small reusable structure (`src/logic.py`): a `Logic` is a total reading
+(its true-set of landmarks, ordered by inclusion); a `GateLattice` exposes
+`subsets`/`principal_ideal` (down, toward the parts), `supersets`/`principal_filter` (up,
+toward the wholes), the Hasse covers, and the lattice operations `meet` $=\cap$ and
+`join` $=\cup$. A **`PartialLogic`** is a three-valued assignment — each landmark
+*known-true*, *known-false*, or *unknown* — and it denotes the interval
+
+$$ [\,\underbrace{\textsf{known-true}}_{\text{subset bound (strongest)}},\ \
+   \underbrace{\textsf{all}\setminus\textsf{known-false}}_{\text{superset bound (weakest)}}\,], $$
+
+i.e. it *is* a position between a subset and a superset. Its `completions` are the named
+gates lying in that interval, and learning a fact refines one unknown — asserting a
+landmark true raises the subset bound, ruling one false lowers the superset bound — so
+information walks the partial logic from the loose superset $\top$ down to a single tight
+subset. The worked example (all exact, 12/12 checks, 0 violations):
+
+| step | known-true | known-false | subset bound | superset bound | completions |
+|---|---|---|---|---|---|
+| start | $\{1\}$ | $\varnothing$ | AND $=\{1\}$ | $\top=\{1,i,-1,-i\}$ | AND, XNOR, OR, $\top$ |
+| learn $\lnot A\lnot B$ false | $\{1\}$ | $\{-1\}$ | AND $=\{1\}$ | OR $=\{1,i,-i\}$ | AND, OR |
+| learn $A\lnot B,\lnot AB$ false | $\{1\}$ | $\{-1,i,-i\}$ | AND $=\{1\}$ | AND $=\{1\}$ | AND |
+
+![partial logic between subset and superset](../figures/fig21_partial.png)
+
+*Figure 21. The same `PartialLogic` at three stages. Green ring = current subset bound,
+purple ring = current superset bound, bold nodes/edges = the completions in between. As
+facts accrue the interval collapses from the whole $\top$ down to the part AND — the data
+structure mapping a partial logic between superset and subset.*
+
+So, per orthogonal axis pair, the structure is a single lattice read two ways — a
+superset map up to the wholes and a subset map down to the parts — and a partial logic is
+just a point in between, pinned by a subset bound below and a superset bound above.
+Conjugation, negation, and rotation move between equivalent framings of the same four
+states.
 
 ## 12. Synthesis
 
@@ -842,7 +887,7 @@ python src/spinor.py           # Section 7  -> fig9
 python src/dirac.py            # Section 8  -> fig10
 python src/qnn.py              # Section 9  -> fig11..fig14; results/learning.json
 python src/ledger.py           # Section 10 -> fig15
-python src/logic.py            # Section 11 -> fig16..fig19
+python src/logic.py            # Section 11 -> fig16..fig21
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,

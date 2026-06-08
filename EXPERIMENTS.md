@@ -8,7 +8,7 @@ python src/spinor.py     # Thread 1 -> figures/fig9_spinor.png
 python src/dirac.py      # Thread 2 -> figures/fig10_dirac.png
 python src/qnn.py        # Thread 3 -> figures/fig11..fig14
 python src/ledger.py     # Thread 4 -> figures/fig15_ledger.png
-python src/logic.py      # Thread 5 -> figures/fig16_logic.png, fig17_rotation.png
+python src/logic.py      # Thread 5 -> figures/fig16..fig21 (logic, rotation, gates, lattice maps)
 ```
 
 ---
@@ -228,16 +228,28 @@ per orthogonal axis pair: half agreement (XNOR + AND/NOR poles), half disagreeme
 
 ![gates](figures/fig18_gates.png)
 
-**Whole/part lattice (0 violations).** The four named gates are one structure at two
-levels: wholes (supersets) over parts (subsets). XNOR=`{1,−1}` and XOR=`{i,−i}` are the
-two complementary halves (union = whole, ∩ = ∅); the poles AND=`{1}`, NOR=`{−1}` are
-parts of XNOR; OR=`{1,i,−i}`, NAND=`{−1,i,−i}` are wholes over XOR. The user's pairing
-is exactly **XNOR⊃AND** and **NAND⊃XOR**; output-complement is the lattice's central
-point-reflection (AND↔NAND, NOR↔OR, XOR↔XNOR). One axis = a half-plane (AND/NAND/OR/NOR);
-parity (XOR/XNOR) needs an axis + its orthogonal. Rotation 90° swaps the halves; the
-lattice is invariant.
+**Whole/part lattice — two maps + a data structure (0 violations, 12/12 checks).** The
+gates form one inclusion lattice drawn in two directions. The **superset map** is the
+principal filter `↑AND = {AND, XNOR, OR, ⊤}` (from a part, the wholes that contain it);
+the **subset map** is the principal ideal `↓NAND = {NAND, XOR, NOR, ∅}` (from a whole,
+the parts it contains). They are complement-dual: `S ⊇ AND ⇔ Sᶜ ⊆ NAND`, node-for-node.
 
-![lattice](figures/fig19_lattice.png)
+![superset map](figures/fig19_superset.png)
+![subset map](figures/fig20_subset.png)
+
+The lattice is a reusable data structure (`Logic`, `GateLattice`, `PartialLogic`). A
+`PartialLogic` marks each landmark known-true / known-false / unknown and denotes the
+interval `[known-true (subset bound), all∖known-false (superset bound)]`; its
+`completions` are the gates in between. Learning facts walks it from ⊤ down to a single
+subset:
+
+| step | known-true | known-false | subset bound | superset bound | completions |
+|---|---|---|---|---|---|
+| start | `{1}` | `∅` | AND `{1}` | ⊤ `{1,i,−1,−i}` | AND, XNOR, OR, ⊤ |
+| ¬A¬B false | `{1}` | `{−1}` | AND `{1}` | OR `{1,i,−i}` | AND, OR |
+| A¬B, ¬AB false | `{1}` | `{−1,i,−i}` | AND `{1}` | AND `{1}` | AND |
+
+![partial logic](figures/fig21_partial.png)
 
 ---
 
