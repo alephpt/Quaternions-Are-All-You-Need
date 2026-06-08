@@ -53,17 +53,44 @@ complex numbers realise *one* imaginary direction. Physical space has three. If 
 insist on extending the construction so that magnitude and direction continue to
 compose lawfully, **which algebraic laws can we keep, and which must we give up?**
 
-We answer with both proof and measurement. Section 2 fixes the framework: the two
-functionals $e$ and $\sigma$, the governing involution, the Euler map, and the two
-candidate composition operators. Section 3 states the three laws under test —
-associativity, distributivity, non-contradiction — and proves the decisive
-theorems. Section 4 describes the numerical methodology; Section 5 reports the
-results and the figures. Section 6 draws the conclusion the title advertises.
+We answer with both proof and measurement. **Part I** fixes the framework and
+settles the algebra: Section 2 defines the two functionals $e$ and $\sigma$, the
+governing involution, the Euler map, and the two candidate composition operators;
+Section 3 states the three laws — associativity, distributivity, non-contradiction —
+and proves the decisive theorems; Section 4 gives the numerical methodology and
+Section 5 the results; Section 6 draws the algebraic conclusion. **Part II** asks what
+the structure *is* and whether it *helps*: Section 7 the $2\pi\!\to\!4\pi$ doubling,
+Section 8 the Dirac connection, Section 9 a from-scratch quaternion neural network
+studied honestly, Section 10 the $2\pi/4\pi$ equation ledger across mathematics and
+physics, and Section 11 the synthesis, limitations, and future work.
 
 The framing is deliberately layered. The geometric/philosophical reading (the
 "realised imaginaries") is *motivation*; the theorems are *what is proven*; the
 Monte-Carlo suite is *independent empirical confirmation* of the theorems on
 pseudo-random inputs. We are explicit throughout about which is which.
+
+### 1.1 Context and prior work
+
+None of the underlying mathematics is new; the contribution is the unifying lens and
+the honest empirical study. Quaternions are Hamilton's (1843); that
+$\mathbb{R},\mathbb{C},\mathbb{H}$ are the only finite-dimensional associative real
+division algebras is Frobenius's theorem (1878); the realisation of phase is Euler's.
+The map $\mathbb{H}\cong\mathfrak{su}(2)$ to the Pauli matrices (Pauli, 1927) and the
+assembly of the Dirac operator (Dirac, 1928) from these cells are standard Clifford-
+algebra facts (Clifford, 1878). The $4\pi$ periodicity of spinors — the double cover
+$\mathrm{SU}(2)\to\mathrm{SO}(3)$ — is classical, and is the same content as the
+framework's half-angle functional $\sigma$.
+
+On the learning side, quaternion-valued neural networks are an established line
+(e.g. Parcollet and collaborators' quaternion recurrent and convolutional networks,
+and the survey literature), motivated as here by the Hamilton product's weight-
+sharing. Our aim is not to introduce the architecture but to test it *honestly* in
+isolation — with a true apples-to-apples baseline, steps-to-threshold, and a
+documented optimised implementation — and to report where the prior helps and where
+it does not. (Rotary position embeddings, Su et al. 2021, are the complex-circle
+special case of the same phase idea; we deliberately do not build on them here, to
+study the quaternion structure on its own.) *The bibliography in Appendix C is
+preliminary and should be verified before any submission.*
 
 ---
 
@@ -607,6 +634,33 @@ is a correct and sample-efficient inductive bias for data with rotational/spinor
 structure** — a claim Section 9.2 already supports and that future work can test at
 scale.
 
+### 11.1 Limitations
+
+We state the boundaries of the work plainly. (i) The algebraic results re-derive and
+re-package classical facts (Hamilton, Frobenius); their value is the unifying
+$e/\sigma$ lens and the reproducible empirical confirmation, not new theorems. (ii)
+The phase-additive operator is a deliberately simple foil; its failure off the plane
+is expected from Baker–Campbell–Hausdorff and should be read as an illustration, not a
+refutation of a serious competitor. (iii) The learning study is small-scale, on
+synthetic rotational tasks, in pure NumPy; it establishes *existence and direction* of
+effects (it learns; the prior helps when correct, hurts when not) but not behaviour at
+the scale or on the data distributions of real applications. (iv) The quaternion MLP
+uses only left-multiplication layers and split activations; richer designs (two-sided
+products, quaternion-aware normalisation/attention) may change the rotation-sandwich
+result and are untested here. (v) The bibliography is preliminary.
+
+### 11.2 Future work
+
+The defensible thesis — *the* $\mathrm{SU}(2)/4\pi$ *structure is a correct,
+sample-efficient inductive bias for rotational/spinorial data* — suggests concrete
+next steps: test the sample-efficiency advantage on real rotational data (IMU/pose,
+3-D point clouds, crystallography, polarised signals); design layers that natively
+represent the conjugation action $r\,p\,r^{*}$ so the prior fits rotation tasks rather
+than fighting them; quantify the parameter/accuracy frontier at scale against
+capacity-matched real baselines; and explore the Dirac-cell ($M_2(\mathbb{H})$)
+structure for spinorial data. Each is a measurement the present harness is built to
+make.
+
 ---
 
 ## Appendix A. Reproducibility
@@ -644,3 +698,25 @@ python src/ledger.py           # Section 10 -> fig15
 | $h_{+}$ | phase-additive operator $\exp(\log x+\log y)$ |
 | $(\cdot)$ | Hamilton product |
 | $[a,b]$ | commutator $ab-ba$ |
+
+## Appendix C. References (preliminary — verify before submission)
+
+> These entries point to well-established sources for the classical results used; the
+> list is not exhaustive and citation details should be checked before any submission.
+
+1. W. R. Hamilton, *On a new species of imaginary quantities connected with a theory
+   of quaternions*, Proc. Royal Irish Academy (1843).
+2. F. G. Frobenius, *Über lineare Substitutionen und bilineare Formen*, J. reine
+   angew. Math. (1878) — the classification of real associative division algebras.
+3. W. K. Clifford, *Applications of Grassmann's extensive algebra*, Amer. J. Math.
+   (1878) — Clifford algebras.
+4. L. Euler — the identity $e^{i\theta}=\cos\theta+i\sin\theta$ (Euler's formula).
+5. W. Pauli, *Zur Quantenmechanik des magnetischen Elektrons*, Z. Phys. (1927) — the
+   Pauli matrices and $\mathfrak{su}(2)$.
+6. P. A. M. Dirac, *The quantum theory of the electron*, Proc. Roy. Soc. A (1928) —
+   the Dirac equation / gamma matrices.
+7. T. Parcollet, M. Morchid, G. Linarès, *A survey of quaternion neural networks*,
+   Artificial Intelligence Review (2020), and related quaternion recurrent/
+   convolutional network papers.
+8. J. Su et al., *RoFormer: Enhanced Transformer with Rotary Position Embedding*
+   (2021) — the complex-circle special case of phase encoding (not used here).
