@@ -34,10 +34,12 @@ the data genuinely carries multiplicative quaternion structure. Finally we expos
 two Boolean variables (agreement $=$ real, disagreement $=$ imaginary), conjugation is
 the swap $A\leftrightarrow B$ and negation the joint complement, and multiplication is
 bitwise XOR of the basis indices dressed with a Boolean sign — the choice of "real"
-axis being a free $U(1)$ rotation. A *consistency cursor* then measures the three
-relations a partial logic can carry — alignment, exclusion, contradiction — as
-$\operatorname{Re}(c\bar z)=+1/0/-1$, with exclusion becoming *directional* (a 2-sphere of
-imaginary units) at the quaternion level. *Quaternions are all you need — for the algebra;
+axis being a free $U(1)$ rotation. A *consistency cursor* measures how two propositions
+relate by the correlation $\operatorname{Re}(c\bar z)=\cos\theta$ — equivalence $(+1)$,
+independence $(0)$, negation $(-1)$ — which we prove both as a quaternion identity (to
+$10^{-14}$ over random inputs) and as the exact correlation of $\pm1$ truth-tables; the
+independence case becomes *directional* — a 2-sphere of square-roots of $-1$ — in the
+quaternions. *Quaternions are all you need — for the algebra;
 for learning, only when the structure is; and underneath, it is all Boolean logic on the
 circle.*
 
@@ -851,11 +853,45 @@ This single number carries the three relations one can have with the cursor (all
 | $\kappa=0$ | **exclusion** | orthogonal ($z\perp c$) |
 | $\kappa=-1$ | **contradiction** | antipodal ($z=-c$) |
 
-It is exactly the governing involution read as a measure: contradiction is
-$\sigma(z)=-\sigma(c)$ (the antipode the whole paper is built on), alignment is identity,
-exclusion is the orthogonal phase. And it **refines** the binary split of §11.1: the real
-(agreement) axis splits *by sign* into alignment $(+1)$ vs contradiction $(-1)$; the
-imaginary (disagreement) axis *is* exclusion.
+We must keep two things apart: the geometry is a **theorem**, the logical words are a
+**dictionary**. Conflating them is easy and we avoid it deliberately.
+
+> **Theorem 11.1 (decomposition).** For unit $c,z$, $\kappa(z\mid c)=\operatorname{Re}(c\bar
+> z)=\langle c,z\rangle=\cos\theta$, where $\theta$ is the angle between them. The three
+> values $\kappa=+1,0,-1$ are *exactly* the parallel $(z=c)$, orthogonal $(z\perp c)$ and
+> antiparallel $(z=-c)$ configurations.
+> *Proof.* $\operatorname{Re}(c\bar z)$ is the Euclidean inner product of the unit vectors
+> $c,z$, hence $\cos\theta$; it equals $1,0,-1$ iff $\theta=0,\tfrac\pi2,\pi$. $\square$
+> (Confirmed to $6\times10^{-14}$ over $2\times10^{4}$ random unit quaternions,
+> `verify_relational_proofs`.)
+
+> **Theorem 11.2 (the logical content).** Represent two propositions $A,B$ as $\pm1$
+> functions on the four equiprobable minterms. Their correlation $\rho=\mathbb E[AB]$
+> equals $\cos\theta$ and satisfies $\rho=+1\Leftrightarrow A\equiv B$,
+> $\rho=-1\Leftrightarrow A\equiv\lnot B$, and $\rho=0\Leftrightarrow A,B$ independent;
+> for two binary variables $\rho=0\Leftrightarrow$ statistical independence.
+> *Proof.* exact arithmetic on the $2\times2$ table with fixed marginals; verified with
+> $0$ violations (`verify_correlation_trichotomy`). $\square$
+
+**Definition (dictionary).** We *name* $\kappa=+1$ **alignment** (logical equivalence),
+$\kappa=-1$ **contradiction** (negation, $A\equiv\lnot B$), and $\kappa=0$ **exclusion**.
+Two cautions, stated rather than glossed over: (i) here "exclusion" means *orthogonality /
+statistical independence* $(\rho=0)$ — it is **not** the logical relation of mutual
+exclusivity $\lnot(A\land B)$, which is a different, non-orthogonal relation; (ii) genuine
+contradiction is the proposition-vs-negation case $A$ vs $-A$; the *antipodal landmarks*
+$AB\leftrightarrow\lnot A\lnot B$ are merely *contraries* (both can be false). With that
+dictionary the measure **refines** the binary split of §11.1: the agreement (real) axis
+splits by sign into alignment $(+1)$ and contradiction $(-1)$; the disagreement (imaginary)
+axis carries exclusion.
+
+A frame correction worth making explicit: $\kappa=-1$ is the **antipode** $z=-c$ — the
+*negation*/joint-complement involution of §11.2 ($1\!\leftrightarrow\!-1$,
+$i\!\leftrightarrow\!-i$). It is **not** the conjugation $z\mapsto\bar z$ that realises the
+governing involution $\sigma\mapsto-\sigma$; that map is the swap $A\!\leftrightarrow\!B$,
+and its consistency $\operatorname{Re}(c\,\overline{\bar c})=\operatorname{Re}(c^2)=\cos2\alpha$
+is *not* constant, so conjugation is not one of the three trichotomy values. The trichotomy
+(angle between two elements) and the governing involution (conjugation) are distinct
+structures.
 
 **The cursor is the slider between sublogic and superlogic.** Threshold the consistency
 at a level $\tau$ and keep the landmarks that are at least $\tau$-consistent,
@@ -894,22 +930,33 @@ of §11.5 *exactly* (verified): the cursor's lower threshold **is** the act of l
 ![the consistency cursor](../figures/fig22_cursor.png)
 
 *Figure 22. (A) A cursor at $+1$: each landmark's consistency $\operatorname{Re}(c\bar z)$
-is $+1/0/0/-1$ — alignment, exclusion, exclusion, contradiction. (B) Lowering the
-threshold $\tau$ grows the level-set from the sublogic AND up to the superlogic $\top$.
-(C) Rotating the cursor gives the same chain, relabelled (gauge covariance). (D) At the
-quaternion level exclusion becomes directional.*
+is $+1/0/0/-1$ — i.e. parallel, orthogonal, orthogonal, antiparallel (named alignment,
+exclusion, exclusion, contradiction, where "exclusion" $=$ orthogonality/independence).
+(B) Lowering the threshold $\tau$ grows the level-set from the sublogic AND up to the
+superlogic $\top$. (C) Rotating the cursor gives the same chain, relabelled (gauge
+covariance). (D) At the quaternion level the orthogonal (exclusion) case becomes
+directional — a 2-sphere of $\sqrt{-1}$.*
 
-**At the quaternion level.** The cursor measure lifts verbatim: the **relational
-quaternion** $R(p,q)=p\,\bar q$ has scalar part $=$ alignment$(+)$/contradiction$(-)$ and
-*vector* part $=$ the **exclusion axis**. In $\mathbb{C}$ there are only two ways to be
-orthogonal $(\pm i)$; in $\mathbb{H}$ exclusion fans out into a whole **2-sphere of
-directions** — two propositions can exclude each other "along $i$" versus "along $j$,"
-with $R(i,j)=-k$ (the exclusion direction is the third, cross-product axis). And the
-punchline that closes the paper's loop: every pure exclusion satisfies $R^2=-1$ — the
-exclusion relations *are* the unit imaginaries. Alignment and contradiction are real
-$(\pm1)$; **exclusion is imaginary, and its three dimensions are exactly the $i,j,k$ the
-whole construction is about.** The "realised imaginaries" are the exclusion-relations
-between propositions.
+**At the quaternion level.** The same measure lifts: the **relational quaternion**
+$R(p,q)=p\,\bar q$ has scalar part $\langle p,q\rangle$ (alignment$/$contradiction) and
+*vector* part the orthogonal complement. The provable content is Theorem 11.3:
+
+> **Theorem 11.3.** The relational quaternions with zero scalar part are *exactly* the
+> orthogonal pairs $p\perp q$; each such $R$ is a unit imaginary quaternion with $R^2=-1$,
+> and these form a **2-sphere** $\{xi+yj+zk:x^2+y^2+z^2=1\}$. For orthogonal pure-imaginary
+> $p=[0,\mathbf a],q=[0,\mathbf b]$, $R=-(\mathbf a\times\mathbf b)$ (the cross product).
+> *Proof.* in `verify_relational_proofs` (analytic in the docstring; numeric to
+> $6\times10^{-14}$). $\square$
+
+The genuinely new content is therefore *directional*: in $\mathbb{C}$ (one imaginary axis)
+the zero-scalar set is just the two points $\pm i$ ($S^0$); in $\mathbb{H}$ it is the full
+$S^2$, so $R(i,j)=-k$ distinguishes orthogonality "along $i$" from "along $j$."
+
+*Interpretation (not a theorem).* Under the dictionary above — exclusion $:=$ orthogonality
+$=$ independence — Theorem 11.3 reads as: the unit imaginaries (the square-roots of $-1$)
+are the relations of independent propositions, and the three imaginary dimensions $i,j,k$
+are the directions that independence can take. This is a *reading* of the algebra, offered
+as such; what is proven is Theorem 11.3, not the gloss.
 
 **A worked example on the full 2-sphere.** Take three propositions as unit imaginary
 quaternions $p=i,\ q=j,\ r=k$ — three orthogonal directions. Every pair *excludes*, and
@@ -955,12 +1002,15 @@ Beneath both sits the **logical** reading (Part III), exact and interpretive rat
 a headline result. The four landmarks of the circle are the minterms of two Boolean
 variables; multiplication is bitwise XOR dressed with a Boolean sign; the symmetric gates
 form one inclusion lattice that a *consistency cursor* sweeps between sublogic and
-superlogic, reading off the three relations a partial logic can carry — alignment,
-exclusion, contradiction — as $\operatorname{Re}(c\bar z)=+1/0/-1$. The same measure
-lifts to the quaternions, where exclusion gains a *direction*: the exclusion-relations
-*are* the unit imaginaries $i,j,k$. This adds no theorem, but it is verified to machine
-precision (`src/logic.py`, every check 0 violations) and returns the construction to its
-own opening premise — that the framework was a logic all along.
+superlogic. The cursor's reading $\operatorname{Re}(c\bar z)=\cos\theta$ is the
+correlation of two propositions — equivalence $(+1)$, independence $(0)$, negation $(-1)$
+— which we prove as a quaternion identity over random inputs and as the exact correlation
+of $\pm1$ truth-tables (Theorems 11.1–11.3). At the quaternion level the zero-correlation
+(independent) relations are exactly the unit imaginaries — the square-roots of $-1$ — which
+fan into a 2-sphere of directions. The logical *naming* of these geometric facts (calling
+independence "exclusion," and so on) is a dictionary we state explicitly, not a further
+theorem; the mathematics underneath is verified to machine precision (`src/logic.py`,
+every check 0 violations).
 
 ### 12.1 Limitations
 

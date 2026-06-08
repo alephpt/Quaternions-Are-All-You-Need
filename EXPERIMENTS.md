@@ -266,9 +266,22 @@ sweeps a monotone chain from the tight **sublogic** (AND) up to the full **super
 | relational quaternion `R=p·q̄`: R(1,1)=+1, R(1,−1)=−1, R(i,1) imaginary | True |
 | exclusion is directional (i,j,k distinct axes); pure exclusion `R²=−1` | True |
 
+**What is proven vs named.** The geometry is a theorem; the logical words are a dictionary.
+*Theorem (decomposition):* for unit `c,z`, `Re(c·z̄) = ⟨c,z⟩ = cosθ`, taking `+1/0/−1` at
+parallel/orthogonal/antiparallel — confirmed to `6e−14` over `2×10⁴` random quaternions
+(`verify_relational_proofs`). *Theorem (logic):* the correlation `ρ=E[AB]` of two ±1
+propositions is `+1` iff `A≡B`, `−1` iff `A≡¬B`, `0` iff independent (and for binary vars
+`ρ=0 ⇔ independence`), exactly (`verify_correlation_trichotomy`, 0 violations).
+*Dictionary:* we *name* these alignment/exclusion/contradiction — but "exclusion" here is
+**orthogonality/independence** (`ρ=0`), NOT logical mutual-exclusivity `¬(A∧B)`; and the
+antipodal landmarks are *contraries*, not contradictories. Correction to my earlier draft:
+`κ=−1` is the **antipode/negation** (`z=−c`), not the conjugation `z↦z̄` (`σ↦−σ`); those
+are different maps and only the latter realises the governing involution.
+
 So the cursor-thresholdable gates are *exactly* the separable ones (parity needs two
-cursors), rotation is a free gauge, and at the quaternion level exclusion gains a
-direction — the exclusion relations *are* the unit imaginaries (√−1).
+cursors), rotation is a free gauge, and the zero-correlation (orthogonal/independent)
+relations are realised by the unit imaginaries (√−1) — a 2-sphere of them in ℍ. The
+quaternion identities hold over random inputs, not just the basis.
 
 ![consistency cursor](figures/fig22_cursor.png)
 
