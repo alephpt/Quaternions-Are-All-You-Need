@@ -8,6 +8,7 @@ python src/spinor.py     # Thread 1 -> figures/fig9_spinor.png
 python src/dirac.py      # Thread 2 -> figures/fig10_dirac.png
 python src/qnn.py        # Thread 3 -> figures/fig11..fig14
 python src/ledger.py     # Thread 4 -> figures/fig15_ledger.png
+python src/logic.py      # Thread 5 -> figures/fig16_logic.png, fig17_rotation.png
 ```
 
 ---
@@ -178,6 +179,46 @@ spreading through the enclosing 2-sphere; the `2π` of Fourier / Cauchy / `ħ` i
 
 ---
 
+## Thread 5 — the logical substrate (`src/logic.py`)
+
+**Claim.** The framework's "logic" is literally Boolean. The 4 unit-circle landmarks
+are the 4 minterms of two Booleans `A,B`:
+
+| minterm | agree? | landmark |
+|---|---|---|
+| `AB` | XNOR | `1` |
+| `A!B` | XOR | `i` |
+| `!A!B` | XNOR | `-1` |
+| `!AB` | XOR | `-i` |
+
+So `{A!B, !AB}` (disagreement) are the **conjugates** = imaginary `{i,−i}`, and
+`{AB, !A!B}` (agreement) are the **complements/composites** = real `{1,−1}`.
+
+| identity | residual |
+|---|---|
+| swap `A↔B` == complex conjugation | 0 (exact) |
+| complement both == negation (antipode) | 0 (exact) |
+| `XOR(A,B)` == imaginary grade | 0 (exact) |
+| grade adds via XOR under multiplication | 0 (exact) |
+| ℍ: product index `= a ⊕ b` (bitwise XOR) | 0 violations |
+| ℍ: conjugation is a Boolean function of the index | 0 violations |
+
+The ℍ index table is the abelian Klein-four XOR group; **all** non-commutativity lives
+in the Boolean sign cocycle `φ` (`e_a·e_b = (−1)^{φ(a,b)} e_{a⊕b}`).
+
+![logic](figures/fig16_logic.png)
+
+**Rotation (any angle).** The conjugate/composite split is a choice of axis:
+`C_θ(z) = e^{2iθ} z̄` fixes the diameter at angle θ and flips the perpendicular one.
+At θ=0 the real pair `{1,−1}` is fixed; at **θ=90° the roles swap** (`{i,−i}` fixed,
+`{1,−1}` flipped); a generic θ fixes neither. All verified to ~1e-16. Composing two
+reflections is a rotation → the conjugations form a circle (`U(1)` covariance), the
+continuous completion of the discrete Boolean swap.
+
+![rotation](figures/fig17_rotation.png)
+
+---
+
 ## Honest summary
 
 - **Thread 1 (2π/4π):** real and exact; the deepest of the three. The half-angle
@@ -196,6 +237,10 @@ spreading through the enclosing 2-sphere; the `2π` of Fourier / Cauchy / `ħ` i
   sphere (`4π`, ℍ, `SU(2)`); `4π = 2·2π` is the double cover. Physics reaches for
   `4π` when a quantity spreads through 3-D space (flux laws) or carries half-integer
   spin.
+- **Thread 5 (logical substrate):** the whole thing is Boolean logic on the circle —
+  minterms = landmarks, agreement/disagreement = real/imaginary, conjugation = swap,
+  negation = complement, multiplication = XOR + Boolean sign, and the "real" axis is a
+  free `U(1)` choice. This closes the loop back to the framework's opening "logic."
 
 **Open question for the paper's thesis:** the strongest, most defensible claim
 emerging from these experiments is *not* "quaternions beat real nets," but

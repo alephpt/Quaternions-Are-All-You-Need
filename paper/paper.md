@@ -29,8 +29,14 @@ algebra ($Cl(1,3)\cong M_2(\mathbb{H})$);
 and a from-scratch quaternion neural network, where a **true apples-to-apples**
 study finds the Hamilton prior is *not* a universal win — it underperforms a real
 network on tasks it does not fit, but is markedly more **sample-efficient** when
-the data genuinely carries multiplicative quaternion structure. *Quaternions are
-all you need — for the algebra; for learning, only when the structure is.*
+the data genuinely carries multiplicative quaternion structure. Finally we expose the
+**logical substrate**: the four landmarks of the unit circle are the four minterms of
+two Boolean variables (agreement $=$ real, disagreement $=$ imaginary), conjugation is
+the swap $A\leftrightarrow B$ and negation the joint complement, and multiplication is
+bitwise XOR of the basis indices dressed with a Boolean sign — the choice of "real"
+axis being a free $U(1)$ rotation. *Quaternions are all you need — for the algebra; for
+learning, only when the structure is; and underneath, it is all Boolean logic on the
+circle.*
 
 ---
 
@@ -62,7 +68,8 @@ Section 5 the results; Section 6 draws the algebraic conclusion. **Part II** ask
 the structure *is* and whether it *helps*: Section 7 the $2\pi\!\to\!4\pi$ doubling,
 Section 8 the Dirac connection, Section 9 a from-scratch quaternion neural network
 studied honestly, Section 10 the $2\pi/4\pi$ equation ledger across mathematics and
-physics, and Section 11 the synthesis, limitations, and future work.
+physics, Section 11 the Boolean logic beneath the whole construction, and Section 12
+the synthesis, limitations, and future work.
 
 The framing is deliberately layered. The geometric/philosophical reading (the
 "realised imaginaries") is *motivation*; the theorems are *what is proven*; the
@@ -616,7 +623,116 @@ the signature of the complex circle; $4\pi$ is the signature of the quaternionic
 sphere; and physics reaches for $4\pi$ exactly when a quantity lives on, or spreads
 through, three-dimensional space.**
 
-## 11. Synthesis
+---
+
+# Part III — The logical substrate
+
+## 11. Boolean minterms, XOR, and conjugation
+
+The paper opened with a *logic*: $e(x)=e(y)$ when $\sigma(x)=-\sigma(y)$. We can now
+say what that logic is — it is Boolean, exactly.
+
+### 11.1 The four minterms are the four landmarks
+
+Take two Boolean variables $A,B$. Their four minterms are the four ways the pair can
+agree or disagree; map each to the unit circle:
+
+| minterm | meaning | agree? | landmark |
+|---|---|---|---|
+| $AB$ | both true | XNOR | $1$ (angle $0$) |
+| $A\bar B$ | $A$, not $B$ | XOR | $i$ (angle $\pi/2$) |
+| $\bar A\bar B$ | both false | XNOR | $-1$ (angle $\pi$) |
+| $\bar AB$ | not $A$, $B$ | XOR | $-i$ (angle $3\pi/2$) |
+
+These are precisely the Euler landmarks of Section 2.4, and the pairing the framework
+is built on falls straight out:
+
+* $\{A\bar B,\ \bar AB\}$ — the **disagreement** (XOR) pair — are the **conjugates**, the imaginary axis $\{i,-i\}$;
+* $\{AB,\ \bar A\bar B\}$ — the **agreement** (XNOR) pair — are the **complements/composites**, the real axis $\{1,-1\}$.
+
+"Real vs. imaginary" is nothing but "the two propositions agree vs. disagree." The
+same holds for every imaginary axis ($j,k,\dots$) and, as Section 11.3 shows, in every
+dimension.
+
+### 11.2 The two involutions are two Boolean operations
+
+Two elementary involutions act on a pair of Boolean variables, and each is one of the
+framework's (both verified to residual $0$ in `src/logic.py`):
+
+* **swap** $A\leftrightarrow B$ fixes the agreement pair and swaps
+  $A\bar B\leftrightarrow\bar AB$ — i.e. fixes $\{1,-1\}$ and flips $i\leftrightarrow-i$.
+  This is **complex conjugation** $z\mapsto\bar z$: the realisation of
+  $\sigma(x)=-\sigma(y)$ with $e$ held fixed.
+* **complement** $A\mapsto\bar A,\ B\mapsto\bar B$ sends
+  $AB\leftrightarrow\bar A\bar B$ and $A\bar B\leftrightarrow\bar AB$ — i.e.
+  $1\leftrightarrow-1$ and $i\leftrightarrow-i$. This is **negation** $z\mapsto-z$, the
+  antipode — the "$1\leftrightarrow0,\ -1\leftrightarrow\pi$" inversion of Part I.
+
+The governing involution of the entire paper is, literally, *exchanging the order of
+two propositions*.
+
+### 11.3 Multiplication is XOR plus a Boolean sign
+
+The disagreement bit $\mathrm{XOR}(A,B)$ is the "is it imaginary?" grade, and it
+**adds modulo 2** under multiplication — imaginary $\times$ imaginary $=$ real, and so
+on (residual $0$). That is the $\mathbb{Z}_2$-grading of $\mathbb{C}$, and it
+generalises. Index the basis of any Cayley–Dickson algebra by bit-strings:
+$\mathbb{C}$ by $\mathbb{Z}_2$, the $\{1,i,j,k\}$ of $\mathbb{H}$ by
+$\{00,01,10,11\}$, $\mathbb{O}$ by $\mathbb{Z}_2^3$. Then
+
+$$ e_a \cdot e_b = (-1)^{\phi(a,b)}\, e_{a\oplus b}, $$
+
+where $a\oplus b$ is **bitwise XOR** and $\phi$ is a Boolean cocycle. We verify on
+$\mathbb{H}$ (0 violations) that the product index is *always* the XOR of the indices —
+the multiplication table of the indices is the abelian Klein-four group
+$(\mathbb{Z}_2^2,\oplus)$ — while **all** of the non-commutativity is carried by the
+sign $\phi$. Conjugation is itself Boolean: it negates exactly the basis elements
+whose index is nonzero (the imaginary ones).
+
+![the logical substrate](../figures/fig16_logic.png)
+
+*Figure 16. Left: the minterms of $(A,B)$ are the unit-circle landmarks — agreement
+(XNOR) the real axis, disagreement (XOR) the imaginary axis; conjugation is the swap
+$A\leftrightarrow B$, negation the complement. Middle: the $\mathbb{H}$ product index
+is the bitwise XOR $a\oplus b$. Right: the entire non-commutative content is the
+Boolean sign cocycle $(-1)^{\phi(a,b)}$.*
+
+This is the substrate beneath the whole construction. The "imaginaries" Descartes and
+Euler reached for are the *disagreement* states of a logic; the unit circle is the
+truth table of two propositions; conjugation is their exchange; and the algebra of
+$\mathbb{C},\mathbb{H},\mathbb{O}$ is the group law of bit-strings (XOR) dressed with a
+Boolean sign. The logic the paper began with was Boolean all along.
+
+### 11.4 Conjugation is a choice of axis (the continuous completion)
+
+Which pair is "real" is not absolute — it is a choice of reflection axis, and rotating
+that choice rotates the partition. Conjugation across the axis at angle $\theta$ is
+
+$$ C_\theta(z) = e^{2i\theta}\,\bar z, $$
+
+an involution ($C_\theta\!\circ\!C_\theta=\mathrm{id}$) that fixes the diameter at
+angle $\theta$ and flips the perpendicular one. At $\theta=0$ it is ordinary
+conjugation — $\{1,-1\}$ fixed, $\{i,-i\}$ flipped. **Rotate by $90^\circ$ and the
+roles swap exactly**: $C_{\pi/2}$ fixes $\{i,-i\}$ and flips $\{1,-1\}$, so now the
+agreement pair $\{AB,\bar A\bar B\}$ behaves as the conjugates and the disagreement
+pair as the composites — the same dynamic, reflected. Every angle $\theta$ gives a
+valid involution (all verified to machine precision, `src/logic.py`); a generic
+$\theta$ fixes neither landmark pair, its mirror lying along a *mixed* diameter.
+
+![rotated conjugation](../figures/fig17_rotation.png)
+
+*Figure 17. The conjugation axis is free. At $0^\circ$ the real pair is fixed; at
+$90^\circ$ the imaginary pair is; at $45^\circ$ neither. Composing two such reflections
+is a rotation, so the conjugations form a circle — the $U(1)$ (gauge) covariance of the
+framework, and the continuous completion of the discrete Boolean swap of Section 11.2.*
+
+This is the natural closure of the logical picture. The discrete swap $A\leftrightarrow
+B$ is the $90^\circ$ corner of a continuum: between "real" and "imaginary" there is a
+full circle of equally valid splits, related by rotation. Nothing privileges one axis;
+the algebra is covariant under the choice, which is exactly why the framework can be
+written about any imaginary direction and in any dimension.
+
+## 12. Synthesis
 
 Two claims, at two confidence levels. The **algebraic** claim is settled: among
 finite-dimensional associative real division algebras, the Hamilton product is the
@@ -634,7 +750,7 @@ is a correct and sample-efficient inductive bias for data with rotational/spinor
 structure** — a claim Section 9.2 already supports and that future work can test at
 scale.
 
-### 11.1 Limitations
+### 12.1 Limitations
 
 We state the boundaries of the work plainly. (i) The algebraic results re-derive and
 re-package classical facts (Hamilton, Frobenius); their value is the unifying
@@ -649,7 +765,7 @@ uses only left-multiplication layers and split activations; richer designs (two-
 products, quaternion-aware normalisation/attention) may change the rotation-sandwich
 result and are untested here. (v) The bibliography is preliminary.
 
-### 11.2 Future work
+### 12.2 Future work
 
 The defensible thesis — *the* $\mathrm{SU}(2)/4\pi$ *structure is a correct,
 sample-efficient inductive bias for rotational/spinorial data* — suggests concrete
@@ -673,6 +789,7 @@ python src/spinor.py           # Section 7  -> fig9
 python src/dirac.py            # Section 8  -> fig10
 python src/qnn.py              # Section 9  -> fig11..fig14; results/learning.json
 python src/ledger.py           # Section 10 -> fig15
+python src/logic.py            # Section 11 -> fig16, fig17
 ```
 
 * `src/framework.py` — the algebra: Hamilton product, conjugation, $e$, $\sigma$,
@@ -685,6 +802,8 @@ python src/ledger.py           # Section 10 -> fig15
   layers (proven equivalent), apples-to-apples, sample-efficiency, and compute
   benchmarks.
 * `src/ledger.py` — Section 10, the $2\pi/4\pi$ geometric roots and ledger figure.
+* `src/logic.py` — Section 11, the Boolean minterm / XOR substrate and rotated
+  conjugation (all identities verified to machine precision).
 * `results/metrics.json`, `results/learning.json` — machine-readable records.
 
 ## Appendix B. Notation

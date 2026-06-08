@@ -52,6 +52,7 @@ python src/spinor.py   # Thread 1: the 2pi/4pi doubling (double cover SU(2)->SO(
 python src/dirac.py    # Thread 2: the Cayley table is the atomic cell of Dirac (Cl(1,3)=M2(H))
 python src/qnn.py      # Thread 3: a from-scratch quaternion MLP that learns (grad-checked)
 python src/ledger.py   # Thread 4: the 2pi/4pi ledger across math & physics
+python src/logic.py    # Thread 5: the Boolean substrate (minterms = circle, XOR = product)
 ```
 
 - **Thread 1** — `q(2π)=−1`, `q(4π)=+1`, exact; `σ` reads the half-angle.
@@ -65,6 +66,11 @@ python src/ledger.py   # Thread 4: the 2pi/4pi ledger across math & physics
 - **Thread 4** — `2π` = the circle/`U(1)`/ℂ (one imaginary axis); `4π` = the
   sphere/`SU(2)`/ℍ (three axes `i,j,k`). The same circle→sphere step explains `4π`
   in Coulomb, Gauss, Poisson, Einstein (`8π`) and the spinor `q(4π)=1`.
+- **Thread 5** — the logical substrate. The 4 unit-circle landmarks are the 4
+  minterms of two Booleans: agreement (XNOR) = real `{1,−1}`, disagreement (XOR) =
+  imaginary `{i,−i}`. Conjugation = swap `A↔B`, negation = complement both, and
+  multiplication = bitwise XOR of basis indices + a Boolean sign. The "real" axis is a
+  free `U(1)` choice — rotating 90° swaps the pairs. All verified to machine precision.
 
 ## Layout
 
@@ -76,7 +82,8 @@ src/spinor.py         Thread 1 experiment -> fig9
 src/dirac.py          Thread 2 experiment -> fig10
 src/qnn.py            Thread 3 quaternion neural net (einsum+BLAS layers) -> fig11..fig14
 src/ledger.py         Thread 4 the 2pi/4pi ledger -> fig15
-paper/paper.md        the paper (DRAFT) — Part I algebra + Part II structure & learning
+src/logic.py          Thread 5 the Boolean substrate -> fig16, fig17
+paper/paper.md        the paper (DRAFT) — Part I algebra, II structure & learning, III logic
 EXPERIMENTS.md        experiment writeup / findings
 figures/              generated figures
 results/              metrics.json, learning.json
