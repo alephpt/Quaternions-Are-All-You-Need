@@ -1103,10 +1103,15 @@ predicates over the integers $1..2520$ makes every cell exact (`truthiness_examp
 "Even" and "multiple-of-3" are exactly independent ($\tfrac12\cdot\tfrac13=\tfrac16$), so
 their Born state is an exact product; "even" and "prime" are strongly anti-coupled (only the
 single integer $2$ is both), pushing mass onto the imaginary/disagreement axis — the sign of
-$\gamma$ is the relationship, exactly as Theorem 11.4 predicts. (Fuzzy semantic pairs —
-*empathy/sympathy*, *induce/deduce* — fit the same template, but their cells require a
-labelled corpus of instances to be measured rather than asserted; we leave that to future
-work and do not put estimated numbers in the paper.)
+$\gamma$ is the relationship, exactly as Theorem 11.4 predicts. Fuzzy semantic pairs —
+*empathy/sympathy*, *illusion/delusion*, *induce/deduce* — fit the same template once the
+relation is *measured* rather than asserted: `src/word_relations.py` grades them with
+pretrained GloVe vectors (the cosine being the relational $\cos\theta$ directly) and with
+text8 (Wikipedia) co-occurrence PMI. We keep those numbers out of the main text because
+they are corpus- and base-rate-dependent and the three notions of "relation" (embedding
+similarity, co-occurrence, logical opposition) genuinely diverge — e.g. *induce/deduce*
+co-occur strongly yet are opposite operations, and *illusion/delusion* are embedding-similar
+yet never co-occur; see the working notes (`EXPERIMENTS.md`) for the measured table.
 
 ## 12. Synthesis
 
@@ -1207,7 +1212,11 @@ python src/logic.py            # Section 11 -> fig16..fig24
   involution via the framework's own $e/\sigma/$conjugate, and the Born/entanglement
   reading) by `verify_truthiness` and `verify_truthiness_involution` (to $10^{-16}$ over
   $2\times10^{5}$ random distributions), with worked exact examples in `truthiness_examples`.
-* `results/metrics.json`, `results/learning.json` — machine-readable records.
+* `src/word_relations.py` — optional: grades real word pairs into the §11.7 structure with
+  pretrained GloVe cosine and text8 (Wikipedia) co-occurrence PMI (requires `gensim` and
+  network); writes `results/word_relations.json`.
+* `results/metrics.json`, `results/learning.json`, `results/word_relations.json` —
+  machine-readable records.
 
 ## Appendix B. Notation
 

@@ -9,6 +9,7 @@ python src/dirac.py      # Thread 2 -> figures/fig10_dirac.png
 python src/qnn.py        # Thread 3 -> figures/fig11..fig14
 python src/ledger.py     # Thread 4 -> figures/fig15_ledger.png
 python src/logic.py      # Thread 5 -> figures/fig16..fig24 (logic, rotation, gates, lattice, cursor, 2-sphere, truthiness)
+python src/word_relations.py  # Thread 5 addendum -> results/word_relations.json (needs gensim + network)
 ```
 
 ---
@@ -310,6 +311,36 @@ even vs multiple-of-3 → exactly independent (Cov=0, product state); even vs pr
 (only 2 is both, mass on the disagreement axis); multiple-of-6 vs multiple-of-4 → Cov=+0.042.
 
 ![truthiness](figures/fig24_truthiness.png)
+
+### Grading real word pairs (`src/word_relations.py`)
+
+Can we grade words instead of guessing? Yes — two real graders, both measured (GloVe-50
+vectors; text8 = ~17M tokens of Wikipedia). The embedding cosine **is** the relational
+`cos θ` of §11.6, and (Levy–Goldberg 2014) the word2vec dot product ≈ shifted PMI ≈ `log`
+of the coupling γ.
+
+| pair | GloVe cosine | PMI@10 | PMI@30 | PMI@100 | raw counts |
+|---|---|---|---|---|---|
+| empathy / sympathy | **+0.736** | +4.99 | +3.93 | +2.77 | 34 / 339 |
+| illusion / delusion | +0.497 | −∞ | −∞ | −∞ | 226 / 97 |
+| induce / deduce | +0.384 | +4.67 | +4.18 | +3.50 | 827 / 245 |
+
+The result is honest and instructive — **the two graders disagree, exactly as warned**:
+
+- *empathy/sympathy* — both say "related" (high cosine, strong +PMI), but `empathy` occurs
+  only 34× in 17M tokens, so the co-occurrence estimate is low-confidence.
+- *illusion/delusion* — embedding-similar (0.50) yet they **never co-occur** within 100
+  tokens (PMI = −∞). Distributional similarity ≠ joint appearance.
+- *induce/deduce* — **lowest** cosine yet **strong** co-occurrence (+3.5…+4.7): they fill
+  the same logic/maths sentences though they are opposite operations — embedding cosine
+  cannot separate synonym from antonym, precisely the caveat.
+
+Methodological finding: these words are rare, so the contingency is dominated by the empty
+corner (`p00 ≈ 1`) and the framework's `z`, `γ` are non-discriminative — **PMI** (base-rate
+normalised) is the right signal here. The resultant `z` and `γ` discriminate only for
+*balanced* predicates (the number-theory examples above). So "grade by embed/co-occurrence"
+works, but which number is meaningful depends on base rates, and the three notions of
+"relation" (embedding similarity, co-occurrence, logical opposition) are genuinely distinct.
 
 ---
 
