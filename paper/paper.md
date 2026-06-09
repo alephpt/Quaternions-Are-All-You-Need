@@ -1103,15 +1103,33 @@ predicates over the integers $1..2520$ makes every cell exact (`truthiness_examp
 "Even" and "multiple-of-3" are exactly independent ($\tfrac12\cdot\tfrac13=\tfrac16$), so
 their Born state is an exact product; "even" and "prime" are strongly anti-coupled (only the
 single integer $2$ is both), pushing mass onto the imaginary/disagreement axis — the sign of
-$\gamma$ is the relationship, exactly as Theorem 11.4 predicts. Fuzzy semantic pairs —
-*empathy/sympathy*, *illusion/delusion*, *induce/deduce* — fit the same template once the
-relation is *measured* rather than asserted: `src/word_relations.py` grades them with
-pretrained GloVe vectors (the cosine being the relational $\cos\theta$ directly) and with
-text8 (Wikipedia) co-occurrence PMI. We keep those numbers out of the main text because
-they are corpus- and base-rate-dependent and the three notions of "relation" (embedding
-similarity, co-occurrence, logical opposition) genuinely diverge — e.g. *induce/deduce*
-co-occur strongly yet are opposite operations, and *illusion/delusion* are embedding-similar
-yet never co-occur; see the working notes (`EXPERIMENTS.md`) for the measured table.
+$\gamma$ is the relationship, exactly as Theorem 11.4 predicts.
+
+**Preliminary measurement on real words.** Fuzzy semantic pairs fit the same template once
+the relation is *measured* rather than asserted (`src/word_relations.py`). Two real graders:
+the **embedding cosine** between pretrained GloVe vectors — which *is* the relational
+$\cos\theta$ of §11.6 directly, and by Levy–Goldberg (2014) the word2vec dot product
+approximates shifted PMI, i.e. $\log$ of the coupling $\gamma$ — and **co-occurrence PMI**
+over text8 (~$1.7\times10^{7}$ tokens of Wikipedia) at window scales $10/30/100$:
+
+| pair | GloVe cosine | PMI@10 | PMI@30 | PMI@100 | raw counts |
+|---|---:|---:|---:|---:|---:|
+| empathy / sympathy | $+0.736$ | $+4.99$ | $+3.93$ | $+2.77$ | $34/339$ |
+| illusion / delusion | $+0.497$ | $-\infty$ | $-\infty$ | $-\infty$ | $226/97$ |
+| induce / deduce | $+0.384$ | $+4.67$ | $+4.18$ | $+3.50$ | $827/245$ |
+
+These are reported as *preliminary* and corpus-dependent, and they make an honest point: the
+three notions of "relation" genuinely diverge. *empathy/sympathy* score related on both, but
+"empathy" occurs only $34$ times, so the co-occurrence estimate is low-confidence.
+*illusion/delusion* are embedding-similar ($0.50$) yet **never co-occur** within $100$ tokens
+($\mathrm{PMI}=-\infty$): distributional similarity is not joint appearance.
+*induce/deduce* have the **lowest** cosine yet **strong** co-occurrence — they fill the same
+logic/maths sentences though they are opposite operations, so embedding cosine cannot
+separate synonym from antonym. A methodological caveat follows from the rarity: when base
+rates are tiny the table is dominated by the empty corner $p_{00}\!\approx\!1$, so the
+resultant $z$ and $\gamma$ are non-discriminative and **PMI** (base-rate normalised) is the
+right signal; the framework's $z,\gamma$ discriminate cleanly only for *balanced* predicates
+such as the integer examples above.
 
 ## 12. Synthesis
 
