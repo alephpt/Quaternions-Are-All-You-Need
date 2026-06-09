@@ -35,7 +35,7 @@ two Boolean variables (agreement $=$ real, disagreement $=$ imaginary), conjugat
 the swap $A\leftrightarrow B$ and negation the joint complement, and multiplication is
 bitwise XOR of the basis indices dressed with a Boolean sign — the choice of "real"
 axis being a free $U(1)$ rotation. A *consistency cursor* measures how two propositions
-relate by the correlation $\operatorname{Re}(c\bar z)=\cos\theta$ — equivalence $(+1)$,
+relate by the correlation $\mathrm{Re}(c\bar z)=\cos\theta$ — equivalence $(+1)$,
 independence $(0)$, negation $(-1)$ — which we prove both as a quaternion identity (to
 $10^{-14}$ over random inputs) and as the exact correlation of $\pm1$ truth-tables; the
 independence case becomes *directional* — a 2-sphere of square-roots of $-1$ — in the
@@ -131,7 +131,7 @@ We organise everything around two maps.
 * **Phase** (the *unrealised* direction), defined as the imaginary part of the
   quaternion logarithm. For $q=|q|\,(\cos\theta + \mathbf n\sin\theta)$ with unit
   axis $\mathbf n$,
-  $$ \sigma(q) = \operatorname{Im}\log q = \theta\,\mathbf n \in \operatorname{span}\{i,j,k\}. $$
+  $$ \sigma(q) = \mathrm{Im}\log q = \theta\,\mathbf n \in \mathrm{span}\{i,j,k\}. $$
 
 Energy answers "how much"; phase answers "which way, and how far around".
 
@@ -147,7 +147,7 @@ which negates the vector part and fixes the magnitude:
 
 $$ e(q^{*})=e(q), \qquad \sigma(q^{*})=-\sigma(q). $$
 
-We call the pair $(x,y)=(q,q^{*})$ *antipodal*. Their *phase deviation*
+We call the pair $(x,y)=(q,q^{*})$ a *conjugate pair*. Their *phase deviation*
 $\sigma(x)+\sigma(y)$ vanishes, and — as Section 3.3 shows — their product lands
 exactly on the real $1$-ray.
 
@@ -169,7 +169,7 @@ the precise sense in which, on the circle, "$1=0$ and $-1=\pi$."
 ![The Euler involution on the unit circle](../figures/fig1_involution.png)
 
 *Figure 1. The realised imaginaries on $S^1$. Landmarks pair each point with its
-phase angle. The antipodal pair $x$ (blue) and $y=x^{*}$ (red) have equal energy
+phase angle. The conjugate pair $x$ (blue) and $y=x^{*}$ (red) have equal energy
 and opposite phase; their phase deviation is zero.*
 
 ### 2.5 Two candidate operators
@@ -259,8 +259,8 @@ other to derive a falsehood. The load-bearing identities are:
 
 1. **Fundamental relations:** $i^2=j^2=k^2=ijk=-1$.
 2. **Euler landmarks:** $E(0)=1,\ E(\pi)=-1,\ E(\pi/2)=i,\ E(3\pi/2)=-i$.
-3. **Antipode product:** $q\,q^{*}=|q|^2$ — a *non-negative real*. The product of
-   an element with its opposite-phase antipode has **zero imaginary residue** and
+3. **Conjugate product:** $q\,q^{*}=|q|^2$ — a *non-negative real*. The product of
+   an element with its opposite-phase conjugate has **zero imaginary residue** and
    lands on the $1$-ray (phase $0$) with energy $e(q)^2$.
 4. **Conjugation involution:** $e(q^{*})=e(q)$ and $\sigma(q^{*})=-\sigma(q)$.
 5. **Exp/Log bridge:** $\exp(\log u)=u$ for unit $u$ — the multiplicative and
@@ -351,10 +351,10 @@ non-bilinear phase-additive operator in $\mathbb{H}$.*
 
 ![Non-contradiction](../figures/fig6_non_contradiction.png)
 
-*Figure 6. The antipode product. Left: $\operatorname{Re}(q q^{*})$ tracks $|q|^2$
+*Figure 6. The conjugate product. Left: $\mathrm{Re}(q q^{*})$ tracks $|q|^2$
 on the line $y=x$ over thousands of random $q$. Right: the imaginary residue
-$\lVert\operatorname{Im}(q q^{*})\rVert$ sits entirely in the machine-precision band
-— the product of an element with its opposite-phase antipode is a positive real, on
+$\lVert\mathrm{Im}(q q^{*})\rVert$ sits entirely in the machine-precision band
+— the product of an element with its opposite-phase conjugate is a positive real, on
 the $1$-ray, with no contradictory imaginary remainder.*
 
 The structural identities verify to machine precision or exactly:
@@ -365,8 +365,8 @@ The structural identities verify to machine precision or exactly:
 | Euler landmarks | $1.8\times10^{-16}$ |
 | $e(q^{*})=e(q)$ | $0$ (exact) |
 | $\sigma(q^{*})=-\sigma(q)$ | $0$ (exact) |
-| $\operatorname{Im}(q q^{*})=0$ | $1.3\times10^{-15}$ |
-| $\operatorname{Re}(q q^{*})=|q|^2$ | $7.1\times10^{-15}$ |
+| $\mathrm{Im}(q q^{*})=0$ | $1.3\times10^{-15}$ |
+| $\mathrm{Re}(q q^{*})=|q|^2$ | $7.1\times10^{-15}$ |
 | $\exp(\log u)=u$ | $1.3\times10^{-15}$ |
 
 ### 5.5 The tradeoff, and the extension from circle to sphere
@@ -599,8 +599,8 @@ The organising fact is geometric, and we verify it numerically (`src/ledger.py`)
   $q(4\pi)=1$, the group $SU(2)$, and the quaternions: **three** imaginary
   directions $i,j,k$.
 
-The ratio is exactly $2$ — the double cover $SU(2)\to U(1)$'s circle, the half-angle
-of Section 7.
+The ratio is exactly $2$ — the double cover $\mathrm{SU}(2)\to\mathrm{SO}(3)$, the
+half-angle of Section 7.
 
 | domain | $2\pi$ form (circle / $U(1)$ / $\mathbb{C}$) | $4\pi$ form (sphere / $SU(2)$ / $\mathbb{H}$) | how it relates |
 |---|---|---|---|
@@ -846,7 +846,7 @@ consistency**, and the natural object that measures it is already in the framewo
 each landmark a unit phase and define, for a chosen unit direction (a **cursor**) $c$,
 the consistency of a landmark $z$ as
 
-$$ \kappa(z\mid c) \;=\; \operatorname{Re}(c\,\bar z) \;=\; \cos\Delta\theta \;\in[-1,1]. $$
+$$ \kappa(z\mid c) \;=\; \mathrm{Re}(c\,\bar z) \;=\; \cos\Delta\theta \;\in[-1,1]. $$
 
 This single number carries the three relations one can have with the cursor (all exact,
 `src/logic.py`, 0 violations):
@@ -860,11 +860,11 @@ This single number carries the three relations one can have with the cursor (all
 We must keep two things apart: the geometry is a **theorem**, the logical words are a
 **dictionary**. Conflating them is easy and we avoid it deliberately.
 
-> **Theorem 11.1 (decomposition).** For unit $c,z$, $\kappa(z\mid c)=\operatorname{Re}(c\bar
+> **Theorem 11.1 (decomposition).** For unit $c,z$, $\kappa(z\mid c)=\mathrm{Re}(c\bar
 > z)=\langle c,z\rangle=\cos\theta$, where $\theta$ is the angle between them. The three
 > values $\kappa=+1,0,-1$ are *exactly* the parallel $(z=c)$, orthogonal $(z\perp c)$ and
 > antiparallel $(z=-c)$ configurations.
-> *Proof.* $\operatorname{Re}(c\bar z)$ is the Euclidean inner product of the unit vectors
+> *Proof.* $\mathrm{Re}(c\bar z)$ is the Euclidean inner product of the unit vectors
 > $c,z$, hence $\cos\theta$; it equals $1,0,-1$ iff $\theta=0,\tfrac\pi2,\pi$. $\square$
 > (Confirmed to $6\times10^{-14}$ over $2\times10^{4}$ random unit quaternions,
 > `verify_relational_proofs`.)
@@ -892,7 +892,7 @@ A frame correction worth making explicit: $\kappa=-1$ is the **antipode** $z=-c$
 *negation*/joint-complement involution of §11.2 ($1\!\leftrightarrow\!-1$,
 $i\!\leftrightarrow\!-i$). It is **not** the conjugation $z\mapsto\bar z$ that realises the
 governing involution $\sigma\mapsto-\sigma$; that map is the swap $A\!\leftrightarrow\!B$,
-and its consistency $\operatorname{Re}(c\,\overline{\bar c})=\operatorname{Re}(c^2)=\cos2\alpha$
+and its consistency $\mathrm{Re}(c\,\overline{\bar c})=\mathrm{Re}(c^2)=\cos2\alpha$
 is *not* constant, so conjugation is not one of the three trichotomy values. The trichotomy
 (angle between two elements) and the governing involution (conjugation) are distinct
 structures.
@@ -933,7 +933,7 @@ of §11.5 *exactly* (verified): the cursor's lower threshold **is** the act of l
 
 ![the consistency cursor](../figures/fig22_cursor.png)
 
-*Figure 22. (A) A cursor at $+1$: each landmark's consistency $\operatorname{Re}(c\bar z)$
+*Figure 22. (A) A cursor at $+1$: each landmark's consistency $\mathrm{Re}(c\bar z)$
 is $+1/0/0/-1$ — i.e. parallel, orthogonal, orthogonal, antiparallel (named alignment,
 exclusion, exclusion, contradiction, where "exclusion" $=$ orthogonality/independence).
 (B) Lowering the threshold $\tau$ grows the level-set from the sublogic AND up to the
@@ -1003,12 +1003,12 @@ The cells are *determined formulaically* from the two True:False splits:
 > **Theorem 11.4 (outer product $+$ coupling).** Every table with the given marginals is
 > $$ \begin{bmatrix}p_{11}&p_{10}\\ p_{01}&p_{00}\end{bmatrix}
 > =\begin{bmatrix}P(A)\\P(\lnot A)\end{bmatrix}\!\begin{bmatrix}P(B)&P(\lnot B)\end{bmatrix}
-> +\;\gamma\begin{bmatrix}+1&-1\\-1&+1\end{bmatrix},\qquad \gamma=\operatorname{Cov}(A,B). $$
+> +\;\gamma\begin{bmatrix}+1&-1\\-1&+1\end{bmatrix},\qquad \gamma=\mathrm{Cov}(A,B). $$
 > The first term is the independent **outer (Kronecker) product** of the two splits; the
 > coupling matrix is exactly the **XNOR$-$XOR** (agreement$-$disagreement) pattern, so
 > $\gamma>0$ routes mass onto the agreement (real) axis and $\gamma<0$ onto the
 > disagreement (imaginary) axis. The marginals are preserved for every $\gamma$, and
-> $\operatorname{Cov}=\gamma$ exactly. $\square$ (`verify_truthiness`.)
+> $\mathrm{Cov}=\gamma$ exactly. $\square$ (`verify_truthiness`.)
 
 For your splits $[0.7,0.3]$ and $[0.4,0.6]$ this gives $AB=0.28+\gamma$, $A\neg B=0.42-\gamma$,
 $\neg AB=0.12-\gamma$, $\neg A\neg B=0.18+\gamma$ — with $\gamma=0$ (independence) the bare
@@ -1020,8 +1020,8 @@ landmark phase, and sum:
 > **Theorem 11.5 (resultant).** The mass-weighted sum of the four landmarks is
 > $$ z=p_{11}(+1)+p_{10}(+i)+p_{01}(-i)+p_{00}(-1)=\big(P(A)+P(B)-1\big)+i\big(P(A)-P(B)\big). $$
 > It depends **only on the marginals**, never on the dependence.
-> *Proof.* $\operatorname{Im}z=p_{10}-p_{01}=(P(A)-p_{11})-(P(B)-p_{11})=P(A)-P(B)$;
-> $\operatorname{Re}z=p_{11}-p_{00}=P(A)+P(B)-1$ after substituting $\sum p=1$. Neither
+> *Proof.* $\mathrm{Im}z=p_{10}-p_{01}=(P(A)-p_{11})-(P(B)-p_{11})=P(A)-P(B)$;
+> $\mathrm{Re}z=p_{11}-p_{00}=P(A)+P(B)-1$ after substituting $\sum p=1$. Neither
 > contains $p_{11}$ once the marginals are fixed. $\square$ (Confirmed to $5\times10^{-16}$
 > over $2\times10^{5}$ random distributions, `verify_truthiness`.)
 
@@ -1043,22 +1043,22 @@ $\le10^{-16}$):
 > disagreement landmarks $\pm i$. Hence the conjugate-pair energy balance $e(x)=e(y)$
 > reduces, through $e(\cdot)$, to the single residual $e(m_{+i})-e(m_{-i})$, which in the
 > mass reading equals exactly $P(A)-P(B)$. So the governing involution holds
-> $\iff P(A)=P(B)\iff\operatorname{Im}z=0$. $\square$
+> $\iff P(A)=P(B)\iff\mathrm{Im}z=0$. $\square$
 
 (The separate *negation* involution — the antipode $AB\!\leftrightarrow\!\neg A\neg B$ —
-is $\operatorname{Re}z=0\iff P(A)+P(B)=1$; both together give $z=0\iff P(A)=P(B)=\tfrac12$,
+is $\mathrm{Re}z=0\iff P(A)+P(B)=1$; both together give $z=0\iff P(A)=P(B)=\tfrac12$,
 the crisp circle.)
 
 So $z$ measures exactly how far a truthiness state sits from the crisp framework, and its
 two components are the two involution-obstructions. Your $A,B$ ($0.7,0.4$) break
-conjugation by $\operatorname{Im}z=0.30=P(A)-P(B)$ and negation by
-$\operatorname{Re}z=0.10$.
+conjugation by $\mathrm{Im}z=0.30=P(A)-P(B)$ and negation by
+$\mathrm{Re}z=0.10$.
 
 **Where the dependence went.** The phasor dropped it; the dependence is the *other* axis —
 the relational/correlation measure of §11.6, now for unequal marginals. Exactly:
-$$ \operatorname{Cov}(A,B)=p_{11}-P(A)P(B)=p_{11}p_{00}-p_{10}p_{01}, $$
+$$ \mathrm{Cov}(A,B)=p_{11}-P(A)P(B)=p_{11}p_{00}-p_{10}p_{01}, $$
 the $2\times2$ cross-product. The full table is therefore three numbers,
-$\{P(A),P(B)\}$ (the phasor $z$) $+\;\{\operatorname{Cov}\}$ (the relational axis) — two
+$\{P(A),P(B)\}$ (the phasor $z$) $+\;\{\mathrm{Cov}\}$ (the relational axis) — two
 marginals plus one coupling.
 
 **Embedding 2 — Born (in $\mathbb{C}^2\!\otimes\mathbb{C}^2$).** Give each minterm energy
@@ -1069,9 +1069,9 @@ $|\psi\rangle=\sum_k\sqrt{p_k}\,|{\rm minterm}_k\rangle$, a two-qubit amplitude 
 > $2\times2$ amplitude matrix $M=\big[\begin{smallmatrix}\sqrt{p_{11}}&\sqrt{p_{10}}\\
 > \sqrt{p_{01}}&\sqrt{p_{00}}\end{smallmatrix}\big]$ is rank-one — a **product
 > (unentangled) state** — $\iff\det M=0\iff p_{11}p_{00}=p_{10}p_{01}\iff
-> \operatorname{Cov}=0\iff A,B$ independent.
+> \mathrm{Cov}=0\iff A,B$ independent.
 > *Proof.* $\langle\psi|\psi\rangle=\sum p_k=1$; $\det M=\sqrt{p_{11}p_{00}}-
-> \sqrt{p_{10}p_{01}}$ shares the sign of and vanishes with $\operatorname{Cov}=
+> \sqrt{p_{10}p_{01}}$ shares the sign of and vanishes with $\mathrm{Cov}=
 > p_{11}p_{00}-p_{10}p_{01}$. $\square$ (`verify_truthiness`, $0$ error on the sign test.)
 
 The two embeddings are complementary: the **phasor** reads the marginal lean and discards
@@ -1085,16 +1085,16 @@ $P(A)=P(B)=\tfrac12$ where $z=0$ and both involutions hold.
 *Figure 24. (A) Phasor embedding: the four landmarks sized by mass (the example
 $P(A)=0.7,P(B)=0.4$, independent); the resultant $z=0.10+0.30i$ depends only on the
 marginals. (B) The two involutions are the symmetry lines $P(A)=P(B)$ (conjugation,
-$\operatorname{Im}z=0$) and $P(A)+P(B)=1$ (negation, $\operatorname{Re}z=0$); they meet at
+$\mathrm{Im}z=0$) and $P(A)+P(B)=1$ (negation, $\mathrm{Re}z=0$); they meet at
 the crisp centre $(\tfrac12,\tfrac12)$, and the example point sits off both. (C) Born
 embedding: as the one free dependence DOF $p_{11}$ sweeps its Fréchet range, $\det M$ and
-$\operatorname{Cov}$ vanish together exactly at independence — the unentangled product
+$\mathrm{Cov}$ vanish together exactly at independence — the unentangled product
 state.*
 
 **Worked examples with the cells computed, not guessed.** Taking $A,B$ as objective
 predicates over the integers $1..2520$ makes every cell exact (`truthiness_examples`):
 
-| $A$ vs $B$ | $(p_{11},p_{10},p_{01},p_{00})$ | $\operatorname{Cov}=\gamma$ | reading |
+| $A$ vs $B$ | $(p_{11},p_{10},p_{01},p_{00})$ | $\mathrm{Cov}=\gamma$ | reading |
 |---|---|---|---|
 | even, multiple-of-3 | $(\tfrac16,\tfrac13,\tfrac16,\tfrac13)$ | $0$ | independent — a product/unentangled state |
 | even, prime | $(0.0004,0.50,0.146,0.354)$ | $-0.073$ | $\gamma<0$ — mass on the disagreement axis |
@@ -1153,7 +1153,7 @@ Beneath both sits the **logical** reading (Part III), exact and interpretive rat
 a headline result. The four landmarks of the circle are the minterms of two Boolean
 variables; multiplication is bitwise XOR dressed with a Boolean sign; the symmetric gates
 form one inclusion lattice that a *consistency cursor* sweeps between sublogic and
-superlogic. The cursor's reading $\operatorname{Re}(c\bar z)=\cos\theta$ is the
+superlogic. The cursor's reading $\mathrm{Re}(c\bar z)=\cos\theta$ is the
 correlation of two propositions — equivalence $(+1)$, independence $(0)$, negation $(-1)$
 — which we prove as a quaternion identity over random inputs and as the exact correlation
 of $\pm1$ truth-tables (Theorems 11.1–11.3). At the quaternion level the zero-correlation
@@ -1241,7 +1241,7 @@ python src/logic.py            # Section 11 -> fig16..fig24
 | symbol | meaning |
 |---|---|
 | $e(q)$ | energy / norm $|q|$ |
-| $\sigma(q)$ | phase $=\operatorname{Im}\log q=\theta\,\mathbf n$ |
+| $\sigma(q)$ | phase $=\mathrm{Im}\log q=\theta\,\mathbf n$ |
 | $q^{*}$ | conjugate (opposite phase, equal energy) |
 | $E(\theta)$ | Euler map $\cos\theta+i\sin\theta$ |
 | $h_{+}$ | phase-additive operator $\exp(\log x+\log y)$ |
